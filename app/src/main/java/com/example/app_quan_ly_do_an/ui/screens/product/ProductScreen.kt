@@ -1,4 +1,4 @@
-package com.example.app_quan_ly_do_an.ui.screens.scanner
+package com.example.app_quan_ly_do_an.ui.screens.product
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 
 @Composable
-fun ScannerScreen() {
+fun ProductScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -18,7 +18,7 @@ fun ScannerScreen() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Quét mã vạch",
+            text = "Hàng hóa",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )

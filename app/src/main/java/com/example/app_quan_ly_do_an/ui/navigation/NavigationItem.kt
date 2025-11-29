@@ -15,15 +15,15 @@ sealed class NavigationItem(
         icon = Icons.Default.Home
     )
 
-    object History : NavigationItem(
-        route = "history",
-        title = "Lịch sử",
+    object Product : NavigationItem(
+        route = "product",
+        title = "Hàng hóa",
         icon = Icons.Default.DateRange
     )
 
-    object Scanner : NavigationItem(
-        route = "scanner",
-        title = "Quét mã",
+    object Stock : NavigationItem(
+        route = "stock",
+        title = "Kho",
         icon = Icons.Default.QrCode2
     )
 
@@ -42,8 +42,8 @@ sealed class NavigationItem(
 
 val navigationItems = listOf(
     NavigationItem.Home,
-    NavigationItem.History,
-    NavigationItem.Scanner,
+    NavigationItem.Product,
+    NavigationItem.Stock,
     NavigationItem.Notification,
     NavigationItem.Profile
 )
