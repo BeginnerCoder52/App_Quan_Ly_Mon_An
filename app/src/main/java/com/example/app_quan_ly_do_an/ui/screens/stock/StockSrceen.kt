@@ -1,4 +1,4 @@
-package com.example.app_quan_ly_do_an.ui.screens.history
+package com.example.app_quan_ly_do_an.ui.screens.stock
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 
 @Composable
-fun HistoryScreen() {
+fun StockScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -18,7 +18,7 @@ fun HistoryScreen() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Lịch sử",
+            text = "Kho",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )

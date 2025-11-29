@@ -5,8 +5,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.app_quan_ly_do_an.ui.screens.home.HomeScreen
-import com.example.app_quan_ly_do_an.ui.screens.history.HistoryScreen
-import com.example.app_quan_ly_do_an.ui.screens.scanner.ScannerScreen
+import com.example.app_quan_ly_do_an.ui.screens.product.ProductScreen
+import com.example.app_quan_ly_do_an.ui.screens.stock.StockScreen
 import com.example.app_quan_ly_do_an.ui.screens.notification.NotificationScreen
 import com.example.app_quan_ly_do_an.ui.screens.profile.ProfileScreen
 
@@ -20,12 +20,12 @@ fun AppNavigation(navController: NavHostController) {
             HomeScreen()
         }
 
-        composable(NavigationItem.History.route) {
-            HistoryScreen()
+        composable(NavigationItem.Product.route) {
+            ProductScreen()
         }
 
-        composable(NavigationItem.Scanner.route) {
-            ScannerScreen()
+        composable(NavigationItem.Stock.route) {
+            StockScreen()
         }
 
         composable(NavigationItem.Notification.route) {
