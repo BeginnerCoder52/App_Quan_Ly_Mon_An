@@ -12,8 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.app_quan_ly_do_an.data.model.FoodItem
+import com.example.app_quan_ly_do_an.ui.screens.home.HomeScreen
 
 @Composable
 fun FoodItemCard(
@@ -93,3 +95,4 @@ fun FoodItemCard(
         }
     }
 }
+
