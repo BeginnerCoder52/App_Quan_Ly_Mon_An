@@ -7,5 +7,7 @@ data class FoodItem(
     val quantity: Int,
     val category: String,
     val imageUrl: String? = null,
-    val points: Double = 0.0
+    val points: Double = 0.0,
+    val price: Double = 0.0
 )
+
