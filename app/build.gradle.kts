@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    // Lưu ý: Plugin này dành cho Kotlin 2.0+. Nếu bạn dùng Kotlin cũ hơn và bị lỗi dòng này, hãy xóa nó đi.
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -28,13 +29,14 @@ android {
         }
     }
 
+    // QUAN TRỌNG: Nâng lên Java 17 để tương thích với Android Studio mới và compileSdk 35
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
 
     buildFeatures {
@@ -43,26 +45,28 @@ android {
 }
 
 dependencies {
-    // Core Android dependencies
+    // Core Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
 
-    // Compose BOM
+    // Compose BOM (Bill of Materials) - Giúp quản lý phiên bản các thư viện UI
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
-    // Navigation Compose
-    implementation("androidx.navigation:navigation-compose:2.7.5")
+    // --- CÁC THƯ VIỆN BỔ SUNG (Đã cập nhật phiên bản mới ổn định) ---
 
-    // Icons Extended
-    implementation("androidx.compose.material:material-icons-extended:1.5.4")
+    // Navigation Compose (Phiên bản 2.8.0 ổn định cho SDK 34/35)
+    implementation("androidx.navigation:navigation-compose:2.8.0")
+
+    // Icons Extended (Bộ icon đầy đủ)
+    implementation("androidx.compose.material:material-icons-extended:1.7.0")
 
     // ViewModel Compose
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
 
     // Testing
     testImplementation(libs.junit)
