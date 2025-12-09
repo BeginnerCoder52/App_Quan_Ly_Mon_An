@@ -55,6 +55,14 @@ sealed class NavigationItem(
         fun createRoute(billId: String) = "import_bill_detail/$billId"
     }
     //HIEN'S CODE END
+
+    object ProductDetail : NavigationItem(
+        route = "product_detail/{productId}",
+        title = "Chi tiết hàng hóa",
+        icon = Icons.Default.Info
+    ) {
+        fun createRoute(productId: String) = "product_detail/$productId"
+    }
 }
 
 val navigationItems = listOf(

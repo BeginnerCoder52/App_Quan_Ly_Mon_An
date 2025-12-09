@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
@@ -30,12 +31,14 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 
+import androidx.navigation.NavController
+
 import com.example.app_quan_ly_do_an.data.model.FoodItem
 import  com.example.app_quan_ly_do_an.ui.components.FilterChipWithArrow
 import  com.example.app_quan_ly_do_an.ui.components.FilterChipIconOnly
 import com.example.app_quan_ly_do_an.ui.components.ProductItemPlaceHolder
 @Composable
-fun ProductScreen() {
+fun ProductScreen(navController: NavController) {
     Scaffold(
         containerColor = Color(0xFFF5F5F5),
         floatingActionButton = {
@@ -131,8 +134,18 @@ fun ProductScreen() {
                 )
                 {
                     items(sampleFoodItems) { item ->
-                        ProductItemPlaceHolder(item)
-                        Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    navController.navigate(
+                                        NavigationItem.ProductDetail.createRoute(item.id)
+                                    )
+                                }
+                        ) {
+                            ProductItemPlaceHolder(item)
+                            Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
+                        }
                     }
 
                     item{ Spacer(modifier = Modifier.height(100.dp))}
@@ -154,7 +167,7 @@ fun ProductScreen() {
 @Composable
 fun ProductScreenPreview()
 {
-    ProductScreen()
+    ProductScreen(navController = androidx.navigation.compose.rememberNavController())
 }
 
 val sampleFoodItems = listOf(

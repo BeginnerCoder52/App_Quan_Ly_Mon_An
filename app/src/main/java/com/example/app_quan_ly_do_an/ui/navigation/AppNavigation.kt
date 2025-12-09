@@ -13,7 +13,7 @@ import com.example.app_quan_ly_do_an.ui.screens.profile.ProfileScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.AddImportBillScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.ImportBillDetailScreen
 //HIEN'S CODE END
-
+import com.example.app_quan_ly_do_an.ui.screens.product.ProductDetailScreen
 /**
  * Defines the navigation graph for the application.
  *
@@ -33,7 +33,7 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         composable(NavigationItem.Product.route) {
-            ProductScreen()
+            ProductScreen(navController = navController)
         }
 
         composable(NavigationItem.Stock.route) {
@@ -64,5 +64,12 @@ fun AppNavigation(navController: NavHostController) {
             )
         }
         //HIEN'S CODE END
+        composable(NavigationItem.ProductDetail.route) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId")
+            ProductDetailScreen(
+                productId = productId,
+                onBack = { navController.popBackStack() }
+            )
+        }
     }
 }
