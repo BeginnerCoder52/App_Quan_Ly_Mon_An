@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 sealed class NavigationItem(
     val route: String,
     val title: String,
-    val icon: ImageVector
+    val icon: ImageVector? = null
 ) {
     object Home : NavigationItem(
         route = "home",
@@ -24,7 +24,8 @@ sealed class NavigationItem(
     object Stock : NavigationItem(
         route = "stock",
         title = "Kho",
-        icon = Icons.Default.QrCode2
+        // Đổi từ QrCode2 sang Inventory (hoặc AllInbox nếu Inventory bị lỗi đỏ)
+        icon = Icons.Default.Inventory
     )
 
     object Notification : NavigationItem(
@@ -38,6 +39,30 @@ sealed class NavigationItem(
         title = "Tài khoản",
         icon = Icons.Default.Person
     )
+
+    //HIEN'S CODE BEGIN
+    object AddImportBill : NavigationItem(
+        route = "add_import_bill",
+        title = "Tạo phiếu nhập",
+        icon = Icons.Default.Add // Icon tạm, không quan trọng vì không hiện ở BottomBar
+    )
+
+    object ImportBillDetail : NavigationItem(
+        route = "import_bill_detail/{billId}",
+        title = "Chi tiết phiếu nhập",
+        icon = Icons.Default.Info
+    ) {
+        fun createRoute(billId: String) = "import_bill_detail/$billId"
+    }
+    //HIEN'S CODE END
+
+    object ProductDetail : NavigationItem(
+        route = "product_detail/{productId}",
+        title = "Chi tiết hàng hóa",
+        icon = Icons.Default.Info
+    ) {
+        fun createRoute(productId: String) = "product_detail/$productId"
+    }
 }
 
 val navigationItems = listOf(
