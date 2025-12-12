@@ -19,12 +19,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
+
+import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
 @Composable
 fun ProductDetailScreen(
     productId: String?,
+    navController: NavController,
     onBack: () -> Unit = {}
+
 ) {
     Scaffold(
+        contentWindowInsets = WindowInsets(0),
         containerColor = Color(0xFFF5F5F5)
     ) { paddingValues ->
 
@@ -140,7 +146,11 @@ fun ProductDetailScreen(
                 // Nút xem danh sách lô hàng (CUỘN ĐƯỢC)
                 item {
                     Button(
-                        onClick = {},
+                        onClick = {
+                            navController.navigate(
+                                NavigationItem.BatchList.createRoute(productId ?: "")
+                            )
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp)
@@ -164,6 +174,7 @@ fun ProductDetailScreen(
 fun ProductDetailScreenPreview() {
     ProductDetailScreen(
         productId = "SP000001",
+        navController = androidx.navigation.compose.rememberNavController(),
         onBack = {}
     )
 }

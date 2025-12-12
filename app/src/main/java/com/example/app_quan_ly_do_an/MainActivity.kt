@@ -26,7 +26,8 @@ class MainActivity : ComponentActivity() {
                         BottomNavigationBar(navController = navController)
                     }
                 ) { innerPadding ->
-                    AppNavigation(navController = navController)
+                    AppNavigation(navController = navController, innerPadding = innerPadding)
+
                 }
             }
         }

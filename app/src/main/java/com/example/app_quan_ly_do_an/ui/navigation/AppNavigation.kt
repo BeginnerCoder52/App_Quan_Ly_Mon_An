@@ -4,16 +4,23 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import com.example.app_quan_ly_do_an.ui.screens.home.HomeScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.StockScreen
 import com.example.app_quan_ly_do_an.ui.screens.notification.NotificationScreen
+import com.example.app_quan_ly_do_an.ui.screens.product.BatchDetailScreen
 import com.example.app_quan_ly_do_an.ui.screens.profile.ProfileScreen
 //HIEN'S CODE BEGIN
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.AddImportBillScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.ImportBillDetailScreen
 //HIEN'S CODE END
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductDetailScreen
+import com.example.app_quan_ly_do_an.ui.screens.product.BatchListScreen
+
+
 /**
  * Defines the navigation graph for the application.
  *
@@ -23,10 +30,11 @@ import com.example.app_quan_ly_do_an.ui.screens.product.ProductDetailScreen
  * @param navController The navigation controller used to navigate between screens.
  */
 @Composable
-fun AppNavigation(navController: NavHostController) {
+fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues) {
     NavHost(
         navController = navController,
-        startDestination = NavigationItem.Home.route
+        startDestination = NavigationItem.Home.route,
+        modifier = Modifier.padding(innerPadding)
     ) {
         composable(NavigationItem.Home.route) {
             HomeScreen()
@@ -68,8 +76,27 @@ fun AppNavigation(navController: NavHostController) {
             val productId = backStackEntry.arguments?.getString("productId")
             ProductDetailScreen(
                 productId = productId,
+                navController = navController,
                 onBack = { navController.popBackStack() }
             )
         }
+
+        composable(NavigationItem.BatchList.route) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId")
+            BatchListScreen(
+                productId = productId,
+                navController = navController,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(NavigationItem.BatchDetail.route) { backStackEntry ->
+            val batchId = backStackEntry.arguments?.getString("batchId")
+            BatchDetailScreen(
+                batchId = batchId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
     }
 }
