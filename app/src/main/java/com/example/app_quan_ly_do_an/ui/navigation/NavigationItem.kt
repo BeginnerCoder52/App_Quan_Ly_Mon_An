@@ -76,6 +76,10 @@ sealed class NavigationItem(
     ) {
         fun createRoute(batchId: String) = "batch_detail/$batchId"
     }
+    object AddProduct : NavigationItem(
+        route = "add_product",
+        title = "Thêm hàng hóa"
+    )
 
 
 }

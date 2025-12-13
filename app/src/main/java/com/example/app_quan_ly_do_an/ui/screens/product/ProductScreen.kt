@@ -44,8 +44,7 @@ fun ProductScreen(navController: NavController) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    // TODO: Điều hướng đến màn thêm sản phẩm
-                    // navController.navigate(NavigationItem.AddProduct.route)
+                    navController.navigate(NavigationItem.AddProduct.route)
                 },
                 containerColor = Color(0xFF0E8A38),
                 contentColor = Color.White,

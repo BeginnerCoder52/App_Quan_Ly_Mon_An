@@ -19,7 +19,7 @@ import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.ImportBillDeta
 //HIEN'S CODE END
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductDetailScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.BatchListScreen
-
+import com.example.app_quan_ly_do_an.ui.screens.product.AddProductScreen
 
 /**
  * Defines the navigation graph for the application.
@@ -94,6 +94,12 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             val batchId = backStackEntry.arguments?.getString("batchId")
             BatchDetailScreen(
                 batchId = batchId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(NavigationItem.AddProduct.route) {
+            AddProductScreen(
                 onBack = { navController.popBackStack() }
             )
         }

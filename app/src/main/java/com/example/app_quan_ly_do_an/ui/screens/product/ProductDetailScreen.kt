@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 
+import com.example.app_quan_ly_do_an.ui.components.DetailRow
 import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
 @Composable
 fun ProductDetailScreen(
@@ -179,11 +180,3 @@ fun ProductDetailScreenPreview() {
     )
 }
 
-
-@Composable
-fun DetailRow(label: String, value: String) {
-    Column(modifier = Modifier.padding(vertical = 10.dp)) {
-        Text(label, fontSize = 14.sp, color = Color.Gray)
-        Text(value, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-    }
-}
