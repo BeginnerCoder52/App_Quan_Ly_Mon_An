@@ -63,6 +63,25 @@ sealed class NavigationItem(
     ) {
         fun createRoute(productId: String) = "product_detail/$productId"
     }
+
+    object BatchList : NavigationItem(
+        route = "batch_list/{productId}",
+        title = "Danh sách lô hàng"
+    ) {
+        fun createRoute(productId: String) = "batch_list/$productId"
+    }
+    object BatchDetail : NavigationItem(
+        route = "batch_detail/{batchId}",
+        title = "Chi tiết lô hàng"
+    ) {
+        fun createRoute(batchId: String) = "batch_detail/$batchId"
+    }
+    object AddProduct : NavigationItem(
+        route = "add_product",
+        title = "Thêm hàng hóa"
+    )
+
+
 }
 
 val navigationItems = listOf(

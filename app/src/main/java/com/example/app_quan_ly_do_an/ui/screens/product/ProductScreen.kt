@@ -3,7 +3,7 @@ package com.example.app_quan_ly_do_an.ui.screens.product
 
 import  androidx.compose.runtime.Composable
 import  androidx.compose.ui.tooling.preview.Preview
-import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
+
 import androidx.compose.material3.Text
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -37,18 +37,24 @@ import com.example.app_quan_ly_do_an.data.model.FoodItem
 import  com.example.app_quan_ly_do_an.ui.components.FilterChipWithArrow
 import  com.example.app_quan_ly_do_an.ui.components.FilterChipIconOnly
 import com.example.app_quan_ly_do_an.ui.components.ProductItemPlaceHolder
+import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
 @Composable
 fun ProductScreen(navController: NavController) {
     Scaffold(
-        containerColor = Color(0xFFF5F5F5),
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {},
+                onClick = {
+                    navController.navigate(NavigationItem.AddProduct.route)
+                },
                 containerColor = Color(0xFF0E8A38),
+                contentColor = Color.White,
                 shape = CircleShape
-
-            ) {Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) }
-        }
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Thêm sản phẩm")
+            }
+        },
+        contentWindowInsets = WindowInsets(0),
+        containerColor = Color(0xFFF5F5F5)
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -122,7 +128,9 @@ fun ProductScreen(navController: NavController) {
 
 
             Surface(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 color = Color.White,
                 shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
                 shadowElevation = 1.dp
