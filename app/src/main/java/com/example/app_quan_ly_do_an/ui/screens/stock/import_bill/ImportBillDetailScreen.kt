@@ -59,7 +59,7 @@ fun ImportBillDetailScreen(billId: String?, onBack: () -> Unit) {
                     Text("Tổng tiền thanh toán:", style = MaterialTheme.typography.titleMedium)
                     Text(
                         text = "${"%,.0f".format(totalMoney)} đ",
-                        color = Color(0xFFFFC107),
+                        color = Color(0xFF006633),
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -138,7 +138,7 @@ fun ProductRowItem(item: BillItemDetail) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "${"%,.0f".format(item.price * item.qty)} đ",
-                    color = Color(0xFFFFC107),
+                    color = Color(0xFF006633),
                     fontWeight = FontWeight.Bold
                 )
             }
