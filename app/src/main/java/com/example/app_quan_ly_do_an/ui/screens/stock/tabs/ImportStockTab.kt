@@ -29,11 +29,11 @@ fun ImportStockTab(navController: NavController) {
 
     // Dữ liệu giả lập
     val sampleBills = listOf(
-        ImportBill("1", "PN005", "Công ty CP Food", "07/12/2025", 5500000.0),
-        ImportBill("2", "PN004", "Vinamilk", "05/12/2025", 2100000.0),
-        ImportBill("3", "PN003", "Chợ Đầu Mối", "01/12/2025", 890000.0),
-        ImportBill("4", "PN002", "Coca Cola VN", "30/11/2025", 12500000.0),
-        ImportBill("5", "PN001", "Pepsi Co", "28/11/2025", 4300000.0)
+        ImportBill("1", "PN005", 0, "Công ty CP Food",  5500000.0),
+        ImportBill("2", "PN004", 0, "Vinamilk",  2100000.0),
+        ImportBill("3", "PN003", 0, "Chợ Đầu Mối",  890000.0),
+        ImportBill("4", "PN002", 0, "Coca Cola VN",  12500000.0),
+        ImportBill("5", "PN001", 0, "Pepsi Co",  4300000.0)
     )
 
     Scaffold(
@@ -166,7 +166,7 @@ fun ImportStockTab(navController: NavController) {
                             bill = bill,
                             primaryColor = primaryColor, // Truyền màu xuống item
                             onClick = {
-                                navController.navigate(NavigationItem.ImportBillDetail.createRoute(bill.id))
+                                navController.navigate(NavigationItem.ImportBillDetail.createRoute(bill.importBillId))
                             }
                         )
                     }
@@ -199,7 +199,7 @@ fun ImportBillItem(
             // Cột bên trái: Mã + Ngày
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = bill.code,
+                    text = bill.importBillIdCode,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = Color.Black
