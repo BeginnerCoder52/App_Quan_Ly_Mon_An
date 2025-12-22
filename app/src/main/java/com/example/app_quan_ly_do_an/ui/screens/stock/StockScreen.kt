@@ -41,25 +41,7 @@ fun StockScreen(navController: NavController, innerPadding: PaddingValues, initi
 
     Scaffold(
         modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
-        //topBar = {
-        //    CenterAlignedTopAppBar(
-        //        title = { Text("Quản lý Kho", fontWeight = FontWeight.Bold) },
-        //        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-         //           containerColor = Color.White
-        //        )
-        //    )
-        //},
-        floatingActionButton = {
-            if (selectedTabIndex == 0) {
-                FloatingActionButton(
-                    onClick = { navController.navigate(NavigationItem.AddImportBill.route) },
-                    containerColor = activeColor,
-                    contentColor = Color.White
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Thêm phiếu nhập")
-                }
-            }
-        },
+        // Đã xóa topbar và float button
         bottomBar = {
             TabRow(
                 selectedTabIndex = selectedTabIndex,

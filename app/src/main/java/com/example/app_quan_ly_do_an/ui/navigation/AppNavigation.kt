@@ -61,8 +61,13 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
         }
 
         //HIEN'S CODE BEGIN
+        //An sửa lại
         composable(NavigationItem.AddImportBill.route) {
-            AddImportBillScreen(onBack = { navController.popBackStack() })
+            AddImportBillScreen(
+                navController = navController,
+                onBack = { navController.popBackStack() },
+                bottomPadding = innerPadding.calculateBottomPadding()
+            )
         }
 
         composable(NavigationItem.ImportBillDetail.route) { backStackEntry ->

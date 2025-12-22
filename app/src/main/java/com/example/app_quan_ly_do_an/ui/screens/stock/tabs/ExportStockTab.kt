@@ -28,12 +28,12 @@ data class ExportBill(
     val date: String, // Ví dụ: 22/11/2025
     val totalAmount: Double
 )
-
+val primaryColor = Color(0xFF006633)
+val backgroundColor = Color(0xFFF5F5F5)
 @Composable
 fun ExportStockTab(navController: NavController) {
     // Màu chủ đạo
-    val primaryColor = Color(0xFF006633)
-    val backgroundColor = Color(0xFFF5F5F5)
+
 
     // Dữ liệu giả lập
     val sampleBills = listOf(
@@ -146,7 +146,7 @@ fun ExportStockTab(navController: NavController) {
                             color = Color.Black
                         )
                         Text(
-                            text = "184", // Số lượng giả định
+                            text = "${sampleBills.size}",
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                             color = Color.Black
@@ -218,7 +218,7 @@ fun ExportBillItem(bill: ExportBill, onClick: () -> Unit) {
                 text = "Tổng tiền: ${"%,.0f".format(bill.totalAmount)}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
-                color = Color.Black
+                color = primaryColor
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
