@@ -1,5 +1,5 @@
 package com.example.app_quan_ly_do_an.ui.screens.stock.tabs
-
+import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,32 +15,40 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.app_quan_ly_do_an.data.model.ImportBill // Giả định model ImportBill nằm ở đây
-import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
+import androidx.navigation.compose.rememberNavController
 
+
+data class ExportBill(
+    val id: String,
+    val code: String, // Ví dụ: EBI0001
+    val date: String, // Ví dụ: 22/11/2025
+    val totalAmount: Double
+)
+val primaryColor = Color(0xFF006633)
+val backgroundColor = Color(0xFFF5F5F5)
 @Composable
-fun ImportStockTab(navController: NavController) {
+fun ExportStockTab(navController: NavController) {
     // Màu chủ đạo
-    val primaryColor = Color(0xFF006633)
-    val backgroundColor = Color(0xFFF5F5F5)
+
 
     // Dữ liệu giả lập
     val sampleBills = listOf(
-        ImportBill("1", "PN005", 0, "Công ty CP Food",  5500000.0),
-        ImportBill("2", "PN004", 0, "Vinamilk",  2100000.0),
-        ImportBill("3", "PN003", 0, "Chợ Đầu Mối",  890000.0),
-        ImportBill("4", "PN002", 0, "Coca Cola VN",  12500000.0),
-        ImportBill("5", "PN001", 0, "Pepsi Co",  4300000.0)
+        ExportBill("1", "EBI0001", "22/11/2025", 1000000.0),
+        ExportBill("2", "EBI0002", "22/11/2025", 1000000.0),
+        ExportBill("3", "EBI0003", "22/11/2025", 1000000.0),
+        ExportBill("4", "EBI0004", "21/11/2025", 500000.0),
+        ExportBill("5", "EBI0005", "20/11/2025", 2500000.0),
     )
 
     Scaffold(
         containerColor = backgroundColor,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate(NavigationItem.AddImportBill.route) },
+                onClick = { navController.navigate(NavigationItem.AddExportBill.route) },
                 containerColor = primaryColor,
                 shape = CircleShape
             ) {
@@ -54,7 +62,7 @@ fun ImportStockTab(navController: NavController) {
                 .padding(innerPadding)
                 .background(backgroundColor)
         ) {
-            // --- HEADER SECTION  ---
+            // --- HEADER SECTION ---
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = Color.White,
@@ -71,7 +79,7 @@ fun ImportStockTab(navController: NavController) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Phiếu nhập", // Đổi tên title
+                            text = "Phiếu xuất",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
@@ -81,7 +89,7 @@ fun ImportStockTab(navController: NavController) {
                                 Icon(Icons.Default.Search, contentDescription = "Search")
                             }
                             IconButton(onClick = {}) {
-                                Icon(Icons.Default.SwapVert, contentDescription = "Sort")
+                                Icon(Icons.Default.SwapVert, contentDescription = "Sort") // Icon sort giống ảnh
                             }
                             IconButton(onClick = {}) {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More")
@@ -110,7 +118,7 @@ fun ImportStockTab(navController: NavController) {
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "Tất cả phiếu nhập", // Đổi tên filter
+                                "Tất cả phiếu xuất",
                                 color = Color.White,
                                 fontSize = 14.sp
                             )
@@ -138,7 +146,7 @@ fun ImportStockTab(navController: NavController) {
                             color = Color.Black
                         )
                         Text(
-                            text = "${sampleBills.size}", // Đếm số lượng thực tế
+                            text = "${sampleBills.size}",
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                             color = Color.Black
@@ -162,13 +170,9 @@ fun ImportStockTab(navController: NavController) {
                         .padding(top = 8.dp)
                 ) {
                     items(sampleBills) { bill ->
-                        ImportBillItem(
-                            bill = bill,
-                            primaryColor = primaryColor, // Truyền màu xuống item
-                            onClick = {
-                                navController.navigate(NavigationItem.ImportBillDetail.createRoute(bill.importBillId))
-                            }
-                        )
+                        ExportBillItem(bill = bill, onClick = {
+                            navController.navigate(NavigationItem.ExportBillDetail.createRoute(bill.id))
+                        })
                     }
                     // Spacer dưới cùng để không bị che bởi FAB
                     item { Spacer(modifier = Modifier.height(80.dp)) }
@@ -178,17 +182,14 @@ fun ImportStockTab(navController: NavController) {
     }
 }
 
-// --- ITEM ---
 @Composable
-fun ImportBillItem(
-    bill: ImportBill,
-    primaryColor: Color,
-    onClick: () -> Unit
-) {
+fun ExportBillItem(bill: ExportBill, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .clickable {
+                onClick();
+            }
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(
@@ -199,14 +200,14 @@ fun ImportBillItem(
             // Cột bên trái: Mã + Ngày
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = bill.importBillIdCode,
+                    text = bill.code,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = Color.Black
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Ngày nhập: ${bill.date}", // Đổi label thành Ngày nhập
+                    text = "Ngày xuất: ${bill.date}",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )
@@ -217,10 +218,12 @@ fun ImportBillItem(
                 text = "Tổng tiền: ${"%,.0f".format(bill.totalAmount)}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
-                color = primaryColor // Dùng màu xanh chủ đạo
+                color = primaryColor
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
         Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
     }
+
 }
+

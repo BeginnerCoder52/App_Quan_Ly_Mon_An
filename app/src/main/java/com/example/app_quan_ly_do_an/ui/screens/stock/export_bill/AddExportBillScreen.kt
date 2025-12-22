@@ -1,4 +1,4 @@
-package com.example.app_quan_ly_do_an.ui.screens.stock.import_bill
+package com.example.app_quan_ly_do_an.ui.screens.stock.export_bill
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 
-// --- MOCK DATA  ---
+// --- MOCK DATA ---
 data class ProductOption(
     val id: String,
     val name: String,
@@ -38,36 +38,35 @@ val availableProducts = listOf(
     ProductOption("4", "7Up", 10500.0),
 )
 
-// Class State cho từng dòng nhập hàng
-class ImportItemState {
+// DÙNG CLASS VỚI MUTABLE STATE ĐỂ NHẬP  LIỆU ---
+class ExportItemState {
     val id: Long = System.currentTimeMillis()
     var selectedProduct by mutableStateOf<ProductOption?>(null)
-    var quantity by mutableStateOf("")
-    var price by mutableStateOf("")
+    var quantity by mutableStateOf("") // Tự động cập nhật UI khi gõ
+    var price by mutableStateOf("")    // Tự động cập nhật UI khi gõ
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddImportBillScreen(
+fun AddExportBillScreen(
     navController: NavController,
     onBack: () -> Unit,
-    bottomPadding: Dp = 0.dp // Nhận padding để tránh bị BottomBar che
+    bottomPadding: Dp = 0.dp
 ) {
     val primaryColor = Color(0xFF006633)
     val backgroundColor = Color(0xFFF5F5F5)
 
-    // State thông tin chung
+    // State chung
     var billCode by remember { mutableStateOf("") }
-    var supplier by remember { mutableStateOf("") } // Thêm trường Nhà cung cấp
-    var billDate by remember { mutableStateOf("07/12/2025") }
+    var billDate by remember { mutableStateOf("22/11/2025") }
 
-    // Danh sách hàng hóa
-    val importItems = remember { mutableStateListOf<ImportItemState>() }
+    // List sản phẩm
+    val exportItems = remember { mutableStateListOf<ExportItemState>() }
 
-    // Tính tổng tiền tự động
+    // --- TÍNH TỔNG TIỀN TỰ ĐỘNG (Dùng derivedStateOf để tối ưu) ---
     val totalAmount by remember {
         derivedStateOf {
-            importItems.sumOf { item ->
+            exportItems.sumOf { item ->
                 val q = item.quantity.toLongOrNull() ?: 0
                 val p = item.price.toDoubleOrNull() ?: 0.0
                 q * p
@@ -80,7 +79,7 @@ fun AddImportBillScreen(
         containerColor = backgroundColor,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Nhập hàng", fontWeight = FontWeight.Bold) },
+                title = { Text("Xuất hàng", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
@@ -94,7 +93,7 @@ fun AddImportBillScreen(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
             )
         },
-        // Thanh Tổng tiền & Lưu phiếu cố định ở đáy
+        // THANH TỔNG TIỀN + LƯU
         bottomBar = {
             Surface(
                 shadowElevation = 10.dp,
@@ -118,7 +117,7 @@ fun AddImportBillScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
                         onClick = {
-                            // TODO: Xử lý lưu data vào DB
+                            // TODO: Xử lý lưu data vào DB tại đây
                             onBack()
                         },
                         modifier = Modifier
@@ -137,40 +136,28 @@ fun AddImportBillScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState()) // Cho phép cuộn nội dung
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // --- 1. THÔNG TIN CƠ BẢN ---
+            // --- THÔNG TIN CƠ BẢN ---
             Text("Thông tin cơ bản", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Mã phiếu
                     OutlinedTextField(
                         value = billCode,
                         onValueChange = { billCode = it },
-                        label = { Text("Mã phiếu nhập") },
+                        label = { Text("Mã phiếu xuất") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp)
                     )
-
-                    // Nhà cung cấp
-                    OutlinedTextField(
-                        value = supplier,
-                        onValueChange = { supplier = it },
-                        label = { Text("Nhà cung cấp") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp)
-                    )
-
-                    // Ngày nhập
                     OutlinedTextField(
                         value = billDate,
                         onValueChange = { billDate = it },
-                        label = { Text("Ngày nhập") },
+                        label = { Text("Ngày xuất") },
                         modifier = Modifier.fillMaxWidth(),
                         trailingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
                         shape = RoundedCornerShape(8.dp)
@@ -178,18 +165,18 @@ fun AddImportBillScreen(
                 }
             }
 
-            // --- 2. DANH SÁCH SẢN PHẨM ---
-            importItems.forEach { itemState ->
-                ImportProductInputItem(
+            // --- DANH SÁCH SẢN PHẨM ---
+            exportItems.forEach { itemState ->
+                ExportProductInputItem(
                     itemState = itemState,
                     primaryColor = primaryColor,
-                    onDelete = { importItems.remove(itemState) }
+                    onDelete = { exportItems.remove(itemState) }
                 )
             }
 
             // Nút Thêm sản phẩm
             Button(
-                onClick = { importItems.add(ImportItemState()) },
+                onClick = { exportItems.add(ExportItemState()) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
@@ -199,16 +186,16 @@ fun AddImportBillScreen(
                 Text("Thêm sản phẩm", fontWeight = FontWeight.Bold)
             }
 
+            // Spacer để nội dung cuối cùng không bị che bởi BottomBar khi cuộn hết cỡ
             Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
 
-// Component Item nhập liệu
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImportProductInputItem(
-    itemState: ImportItemState,
+fun ExportProductInputItem(
+    itemState: ExportItemState,
     primaryColor: Color,
     onDelete: () -> Unit
 ) {
@@ -220,7 +207,7 @@ fun ImportProductInputItem(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header: Dropdown + Xóa
+            // Header: Dropdown chọn SP và nút Xóa
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -248,7 +235,7 @@ fun ImportProductInputItem(
                                     text = { Text(product.name) },
                                     onClick = {
                                         itemState.selectedProduct = product
-                                        // Gợi ý giá mặc định (có thể sửa lại khi nhập hàng)
+                                        // Tự điền giá mặc định, convert sang chuỗi Integer cho đẹp
                                         itemState.price = product.defaultPrice.toInt().toString()
                                         expanded = false
                                     }
@@ -260,15 +247,17 @@ fun ImportProductInputItem(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
+                // Icon xóa
                 IconButton(onClick = onDelete) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
                 }
             }
 
-            // Hiển thị ảnh
+            // Hiển thị ảnh nếu đã chọn sản phẩm
             if (itemState.selectedProduct != null) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Thay bằng AsyncImage nếu có URL
                     Box(
                         modifier = Modifier
                             .size(40.dp)
@@ -284,7 +273,7 @@ fun ImportProductInputItem(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Số lượng
+            // Input Số lượng
             OutlinedTextField(
                 value = itemState.quantity,
                 onValueChange = { itemState.quantity = it },
@@ -296,11 +285,11 @@ fun ImportProductInputItem(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Đơn giá nhập
+            // Input Đơn giá
             OutlinedTextField(
                 value = itemState.price,
                 onValueChange = { itemState.price = it },
-                label = { Text("Đơn giá nhập") },
+                label = { Text("Đơn giá") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp)

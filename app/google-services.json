@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "26368635526",
+    "project_id": "grocery-store-management-a5bff",
+    "storage_bucket": "grocery-store-management-a5bff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:26368635526:android:716f05bc28fadc8cb7d707",
+        "android_client_info": {
+          "package_name": "com.example.app_quan_ly_do_an"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUnAwY5Xrv1q7otJZpUAKE7ctChyCs2hs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

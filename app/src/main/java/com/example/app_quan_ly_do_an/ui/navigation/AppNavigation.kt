@@ -1,12 +1,17 @@
 package com.example.app_quan_ly_do_an.ui.navigation
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+
+import androidx.navigation.navArgument
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+
 import com.example.app_quan_ly_do_an.ui.screens.home.HomeScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.StockScreen
@@ -18,8 +23,13 @@ import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.AddImportBillS
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.ImportBillDetailScreen
 //HIEN'S CODE END
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductDetailScreen
+
+import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.ExportBillDetailScreen
+import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.AddExportBillScreen
+
 import com.example.app_quan_ly_do_an.ui.screens.product.BatchListScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.AddProductScreen
+
 
 /**
  * Defines the navigation graph for the application.
@@ -43,9 +53,16 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
         composable(NavigationItem.Product.route) {
             ProductScreen(navController = navController)
         }
-
-        composable(NavigationItem.Stock.route) {
-            StockScreen(navController = navController)
+        //Lưu biến để quay về đúng tab trước
+        composable(
+            route = NavigationItem.Stock.route,
+            arguments = listOf(navArgument("tab") { 
+                type = NavType.IntType
+                defaultValue = 0 
+            })
+        ) { backStackEntry ->
+            val tab = backStackEntry.arguments?.getInt("tab") ?: 0
+            StockScreen(navController = navController, innerPadding = innerPadding, initialTab = tab)
         }
 
         composable(NavigationItem.Notification.route) {
@@ -56,12 +73,14 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             ProfileScreen()
         }
 
-        composable(NavigationItem.Stock.route) {
-            StockScreen(navController = navController)
-        }
         //HIEN'S CODE BEGIN
+        //An sửa lại
         composable(NavigationItem.AddImportBill.route) {
-            AddImportBillScreen(onBack = { navController.popBackStack() })
+            AddImportBillScreen(
+                navController = navController,
+                onBack = { navController.popBackStack() },
+                bottomPadding = innerPadding.calculateBottomPadding()
+            )
         }
 
         composable(NavigationItem.ImportBillDetail.route) { backStackEntry ->
@@ -101,6 +120,22 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
         composable(NavigationItem.AddProduct.route) {
             AddProductScreen(
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+
+        composable(NavigationItem.ExportBillDetail.route) { backStackEntry ->
+            val billId = backStackEntry.arguments?.getString("billId")
+            ExportBillDetailScreen(
+                navController = navController,
+                billId = billId
+            )
+        }
+        composable(NavigationItem.AddExportBill.route) {
+            AddExportBillScreen(
+                navController = navController,
+                onBack = { navController.popBackStack() },
+                bottomPadding = innerPadding.calculateBottomPadding()
             )
         }
 
