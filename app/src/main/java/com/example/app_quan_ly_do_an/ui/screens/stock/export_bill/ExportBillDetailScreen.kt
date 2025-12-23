@@ -1,5 +1,5 @@
-package com.example.app_quan_ly_do_an.ui.screens.stock.import_bill
-
+package com.example.app_quan_ly_do_an.ui.screens.stock.export_bill
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,43 +8,59 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+// import com.example.app_quan_ly_do_an.R
 
-data class BillItemDetail(val name: String, val qty: Int, val price: Double)
+// --- MOCK DATA CHO CHI TIẾT ---
+data class ExportBillDetail(
+    val id: String,
+    val code: String,
+    val date: String,
+    val totalAmount: Double,
+    val products: List<BillProductItem>
+)
+
+data class BillProductItem(
+    val name: String,
+    val quantity: Int,
+    val price: Double,
+    val imageUrl: String = ""
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImportBillDetailScreen(
-    billId: String?,
-    onBack: () -> Unit
+fun ExportBillDetailScreen(
+    navController: NavController,
+    billId: String? // Nhận ID từ màn hình trước
 ) {
-    // Màu chủ đạo
     val primaryColor = Color(0xFF006633)
     val backgroundColor = Color(0xFFF5F5F5)
 
-    // Dữ liệu giả mô phỏng
-    val fakeProducts = listOf(
-        BillItemDetail("Nước ép Necta đào 1L", 100, 25000.0),
-        BillItemDetail("Gạo ST25 Ông Cua", 50, 180000.0),
-        BillItemDetail("Dầu ăn Neptune 5L", 20, 320000.0)
+    // Dữ liệu giả lập
+    val mockDetail = ExportBillDetail(
+        id = "1",
+        code = "EBI0001",
+        date = "22/11/2025",
+        totalAmount = 1000000.0,
+        products = listOf(
+            BillProductItem("Diet Coke", 100, 10000.0),
+            BillProductItem("Diet Coke", 100, 10000.0),
+            BillProductItem("Pepsi Zero", 50, 12000.0)
+        )
     )
-    val totalMoney = fakeProducts.sumOf { it.qty * it.price }
 
     Scaffold(
         containerColor = backgroundColor,
@@ -52,13 +68,13 @@ fun ImportBillDetailScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Thông tin phiếu nhập",
+                        "Thông tin phiếu xuất",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -109,40 +125,16 @@ fun ImportBillDetailScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Mã phiếu
-                        InfoField(
-                            label = "Mã phiếu nhập",
-                            value = "PN00${billId ?: "X"}",
-                            showCopyIcon = true,
-                            primaryColor = primaryColor
-                        )
+                        // Mã phiếu xuất
+                        InfoField(label = "Mã phiếu xuất", value = mockDetail.code, showCopyIcon = true, primaryColor = primaryColor)
                         Divider(color = Color(0xFFF0F0F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 12.dp))
 
-                        // Nhà cung cấp
-                        InfoFieldWithIcon(
-                            label = "Nhà cung cấp",
-                            value = "Công ty CP Food",
-                            icon = Icons.Default.Person,
-                            primaryColor = primaryColor
-                        )
-                        Divider(color = Color(0xFFF0F0F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 12.dp))
-
-                        // Ngày nhập
-                        InfoFieldWithIcon(
-                            label = "Ngày nhập",
-                            value = "07/12/2025",
-                            icon = Icons.Default.CalendarToday,
-                            primaryColor = primaryColor
-                        )
+                        // Ngày xuất
+                        InfoField(label = "Ngày xuất", value = mockDetail.date)
                         Divider(color = Color(0xFFF0F0F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 12.dp))
 
                         // Tổng tiền
-                        InfoField(
-                            label = "Tổng tiền thanh toán",
-                            value = "${"%,.0f".format(totalMoney)} đ",
-                            isTotal = true,
-                            primaryColor = primaryColor
-                        )
+                        InfoField(label = "Tổng tiền", value = "%,.0f".format(mockDetail.totalAmount))
                     }
                 }
             }
@@ -156,15 +148,15 @@ fun ImportBillDetailScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            "Danh sách hàng hóa",
+                            "Danh sách sản phẩm",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
 
-                        fakeProducts.forEachIndexed { index, product ->
-                            ImportProductDetailItem(product)
-                            if (index < fakeProducts.size - 1) {
+                        mockDetail.products.forEachIndexed { index, product ->
+                            ProductDetailItem(product)
+                            if (index < mockDetail.products.size - 1) {
                                 Divider(color = Color(0xFFF0F0F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 8.dp))
                             }
                         }
@@ -175,14 +167,13 @@ fun ImportBillDetailScreen(
     }
 }
 
-// --- Component hiển thị thông tin  ---
+// --- COMPONENT CON: Dòng thông tin (Label + Value) ---
 @Composable
 fun InfoField(
     label: String,
     value: String,
     showCopyIcon: Boolean = false,
-    isTotal: Boolean = false,
-    primaryColor: Color
+    primaryColor: Color = Color.Black
 ) {
     Column {
         Text(text = label, color = Color.Gray, fontSize = 13.sp)
@@ -191,8 +182,8 @@ fun InfoField(
             Text(
                 text = value,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = if (isTotal) 18.sp else 16.sp,
-                color = if (isTotal) primaryColor else Color.Black
+                fontSize = 16.sp,
+                color = Color.Black
             )
             if (showCopyIcon) {
                 Spacer(modifier = Modifier.width(8.dp))
@@ -200,45 +191,16 @@ fun InfoField(
                     Icons.Default.ContentCopy,
                     contentDescription = "Copy",
                     tint = primaryColor,
-                    modifier = Modifier.size(16.dp).clickable { }
+                    modifier = Modifier.size(16.dp).clickable { /* Handle Copy */ }
                 )
             }
         }
     }
 }
 
-// --- Component hiển thị thông tin kèm Icon  ---
+// --- COMPONENT CON: Item sản phẩm trong danh sách ---
 @Composable
-fun InfoFieldWithIcon(
-    label: String,
-    value: String,
-    icon: ImageVector,
-    primaryColor: Color
-) {
-    Column {
-        Text(text = label, color = Color.Gray, fontSize = 13.sp)
-        Spacer(modifier = Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = primaryColor, // Dùng màu xanh chủ đạo cho icon luôn cho đẹp
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = value,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp,
-                color = Color.Black
-            )
-        }
-    }
-}
-
-// --- Component Item sản phẩm ---
-@Composable
-fun ImportProductDetailItem(item: BillItemDetail) {
+fun ProductDetailItem(item: BillProductItem) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -248,10 +210,11 @@ fun ImportProductDetailItem(item: BillItemDetail) {
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFFEEEEEE)),
+                .background(Color(0xFFEEEEEE)), // Màu xám thay cho ảnh
             contentAlignment = Alignment.Center
         ) {
             Text("IMG", fontSize = 10.sp, color = Color.Gray)
+
         }
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -260,22 +223,20 @@ fun ImportProductDetailItem(item: BillItemDetail) {
             Text(
                 text = item.name,
                 fontWeight = FontWeight.Medium,
-                fontSize = 15.sp,
-                maxLines = 1
+                fontSize = 15.sp
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Số lượng: ${item.qty}",
+                text = "Số lượng: ${item.quantity}",
                 color = Color.Gray,
                 fontSize = 13.sp
             )
         }
 
         Text(
-            text = "${"%,.0f".format(item.price)} đ",
+            text = "Đơn giá: ${"%,.0f".format(item.price)}",
             color = Color.Gray,
             fontSize = 13.sp
         )
     }
 }
-

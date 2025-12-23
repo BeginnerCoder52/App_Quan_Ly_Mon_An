@@ -1,0 +1,62 @@
+package com.example.app_quan_ly_do_an.data.model
+// 1. Sản phẩm (Product)
+data class Product(
+    val productId: String = "",           // Document ID của Firestore
+    val productCode: String = "",         // Mã SP0001
+    val productName: String = "",         // Tên món ăn
+    val productImage: String = "",         // Link từ Firebase Storage
+    val productCategory: String = "",      // Danh mục
+    val unit: String = "",                // kg, gói, chai...
+    val sellPrice: Double = 0.0,
+    val minStock: Int = 0                 // Mức tồn kho tối thiểu
+)
+
+// 2. Chi tiết Lô hàng & Tồn kho (InventoryLot)
+data class InventoryLot(
+    val lotId: String = "",
+    val lotCode: String = "",
+    val productId_FK: String = "",        // Link tới productId
+    val importPrice: Double = 0.0,
+    val expiryDate: Long = 0L,            // Hạn sử dụng (Timestamp)
+    val initialQuantity: Int = 0,
+    val currentQuantity: Int = 0,
+    val location: String = "",            // Vị trí lưu trữ
+    val importDate: Long = 0L             // Ngày nhập (Timestamp)
+)
+
+// 3. Hóa đơn xuất hàng (ExportBill)
+data class ExportBill(
+    val exportBillId: String = "",
+    val exportBillCode: String = "",
+    val date: Long = 0L,                  // Ngày tạo (Timestamp)
+    val totalAmount: Double = 0.0
+)
+
+// 4. Chi tiết hóa đơn xuất hàng (ExportBillDetail)
+data class ExportBillDetail(
+    val exportBillDetailId: String = "",
+    val exportBillDetailCode: String = "",
+    val exportBillId: String = "",        // FK: Hóa đơn xuất
+    val productId_FK: String = "",        // FK: Sản phẩm
+    val quantity: Int = 0,
+    val sellPrice: Double = 0.0
+)
+
+// 5. Hóa đơn nhập hàng (ImportBill)
+data class ImportBill(
+    val importBillId: String = "",
+    val importBillIdCode: String = "",
+    val date: Long = 0L,                  // Ngày nhập (Timestamp)
+    val supplier: String = "",            // Nhà cung cấp
+    val totalAmount: Double = 0.0
+)
+
+// 6. Chi tiết hóa đơn nhập hàng (ImportBillDetail)
+data class ImportBillDetail(
+    val importBillDetailId: String = "",
+    val importBillDetailCode: String = "",
+    val importBillId: String = "",        // FK: Hóa đơn nhập
+    val productId_FK: String = "",        // FK: Sản phẩm
+    val quantity: Int = 0,
+    val importPrice: Double = 0.0
+)

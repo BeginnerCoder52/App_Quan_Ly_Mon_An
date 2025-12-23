@@ -22,11 +22,13 @@ sealed class NavigationItem(
     )
 
     object Stock : NavigationItem(
-        route = "stock",
+        route = "stock?tab={tab}",
         title = "Kho",
         // Đổi từ QrCode2 sang Inventory (hoặc AllInbox nếu Inventory bị lỗi đỏ)
         icon = Icons.Default.Inventory
-    )
+    ) {
+        fun createRoute(tab: Int = 0) = "stock?tab=$tab"
+    }
 
     object Notification : NavigationItem(
         route = "notification",
@@ -64,6 +66,21 @@ sealed class NavigationItem(
         fun createRoute(productId: String) = "product_detail/$productId"
     }
 
+    object AddExportBill : NavigationItem(
+        route = "add_export_bill",
+        title = "Tạo phiếu xuất",
+        icon = Icons.Default.Add // Icon tạm, không quan trọng vì không hiện ở BottomBar
+    )
+
+    object ExportBillDetail : NavigationItem(
+        route = "export_bill_detail/{billId}",
+        title = "Chi tiết phiếu xuất",
+        icon = Icons.Default.Info
+    ) {
+        fun createRoute(billId: String) = "export_bill_detail/$billId"
+    }
+
+
     object BatchList : NavigationItem(
         route = "batch_list/{productId}",
         title = "Danh sách lô hàng"
@@ -82,6 +99,7 @@ sealed class NavigationItem(
     )
 
 
+
 }
 
 val navigationItems = listOf(
@@ -89,5 +107,5 @@ val navigationItems = listOf(
     NavigationItem.Product,
     NavigationItem.Stock,
     NavigationItem.Notification,
-    NavigationItem.Profile
+    NavigationItem.Profile,
 )

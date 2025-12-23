@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     // Lưu ý: Plugin này dành cho Kotlin 2.0+. Nếu bạn dùng Kotlin cũ hơn và bị lỗi dòng này, hãy xóa nó đi.
     alias(libs.plugins.kotlin.compose)
+    //id("com.android.application")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -45,6 +47,13 @@ android {
 }
 
 dependencies {
+    //Firebase
+    implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    // Thêm thư viện Firestore
+    implementation("com.google.firebase:firebase-firestore")
+    // Thêm thư viện Coroutines để xử lý bất đồng bộ mượt hơn
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     // Core Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
