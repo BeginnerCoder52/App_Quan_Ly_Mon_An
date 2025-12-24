@@ -2,21 +2,19 @@ package com.example.app_quan_ly_do_an.ui.screens.product
 
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sort
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,31 +22,41 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.foundation.clickable
-
+import kotlinx.coroutines.launch
 import androidx.navigation.compose.rememberNavController
-
 import androidx.navigation.NavController
 import com.example.app_quan_ly_do_an.data.model.Batch
+import com.example.app_quan_ly_do_an.data.mock.MockProductData
 import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BatchListScreen(
-    productId: String?,
+    productId: String?, // TODO: sẽ dùng để load data từ database
     navController: NavController,
     onBack: () -> Unit = { navController.popBackStack() }
 ) {
-    // Sample data để test UI
-    val sampleBatches = listOf(
-        Batch("LOT0001", "22/11/2025", 100),
-        Batch("LOT0002", "22/11/2025", 100),
-        Batch("LOT0003", "22/11/2025", 100),
-        Batch("LOT0004", "22/11/2025", 100),
-        Batch("LOT0005", "22/11/2025", 100)
-    )
+    var searchQuery by remember { mutableStateOf("") }
+    var isSearching by remember { mutableStateOf(false) }
+
+    // Snackbar state
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // Filter batches based on search query
+    val filteredBatches = remember(searchQuery) {
+        if (searchQuery.isEmpty()) {
+            MockProductData.sampleBatches
+        } else {
+            MockProductData.sampleBatches.filter { batch ->
+                batch.batchCode.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = Color(0xFFF5F5F5),
         contentWindowInsets = WindowInsets(0),
         floatingActionButton = {
@@ -88,22 +96,48 @@ fun BatchListScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = onBack) {
-                                Icon(Icons.Default.ArrowBack, contentDescription = null)
-                            }
-                            Text(
-                                "Danh sách lô hàng",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold
+                        if (isSearching) {
+                            // Search TextField
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(50.dp),
+                                placeholder = { Text("Tìm mã lô hàng...") },
+                                singleLine = true,
+                                trailingIcon = {
+                                    IconButton(onClick = {
+                                        searchQuery = ""
+                                        isSearching = false
+                                    }) {
+                                        Icon(Icons.Default.Close, contentDescription = "Close search")
+                                    }
+                                },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color(0xFF0E8A38),
+                                    focusedLabelColor = Color(0xFF0E8A38),
+                                    cursorColor = Color(0xFF0E8A38)
+                                ),
+                                shape = RoundedCornerShape(12.dp)
                             )
-                        }
+                        } else {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = onBack) {
+                                    Icon(Icons.Default.ArrowBack, contentDescription = null)
+                                }
+                                Text(
+                                    "Danh sách lô hàng",
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
 
-                        Row {
-                            IconButton(onClick = {}) { Icon(Icons.Default.Search, null) }
-                            IconButton(onClick = {}) { Icon(Icons.Default.Sort, null) }
-                            IconButton(onClick = {}) { Icon(Icons.Default.Tune, null) }
-                            IconButton(onClick = {}) { Icon(Icons.Default.MoreVert, null) }
+                            Row {
+                                IconButton(onClick = { isSearching = true }) {
+                                    Icon(Icons.Default.Search, null)
+                                }
+                            }
                         }
                     }
 
@@ -138,9 +172,13 @@ fun BatchListScreen(
                     ) {
                         Column {
                             Text("Tổng tồn", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                            Text("25 lô hàng", fontSize = 12.sp, color = Color.Gray)
+                            Text("${filteredBatches.size} lô hàng", fontSize = 12.sp, color = Color.Gray)
                         }
-                        Text("184", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            "${filteredBatches.sumOf { it.quantity }}",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -156,7 +194,7 @@ fun BatchListScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 100.dp)
             ) {
-                items(sampleBatches) { batch ->
+                items(filteredBatches) { batch ->
                     BatchItem(
                         batch = batch,
                         onClick = {
@@ -196,10 +234,12 @@ fun BatchItem(batch: Batch, onClick: () -> Unit) {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun BatchListScreenPreview() {
-    val navController = androidx.navigation.compose.rememberNavController()
+    val navController = rememberNavController()
 
     BatchListScreen(
         productId = "SP000001",
         navController = navController
     )
 }
+
+

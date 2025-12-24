@@ -1,16 +1,14 @@
 package com.example.app_quan_ly_do_an.ui.navigation
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-
 import androidx.navigation.navArgument
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
 
 import com.example.app_quan_ly_do_an.ui.screens.home.HomeScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductScreen
@@ -29,6 +27,8 @@ import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.AddExportBillS
 
 import com.example.app_quan_ly_do_an.ui.screens.product.BatchListScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.AddProductScreen
+import com.example.app_quan_ly_do_an.ui.screens.product.EditProductScreen
+import com.example.app_quan_ly_do_an.ui.screens.product.EditBatchScreen
 
 
 /**
@@ -113,6 +113,7 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             val batchId = backStackEntry.arguments?.getString("batchId")
             BatchDetailScreen(
                 batchId = batchId,
+                navController = navController,
                 onBack = { navController.popBackStack() }
             )
         }
@@ -123,6 +124,23 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             )
         }
 
+        composable(NavigationItem.EditProduct.route) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId")
+            EditProductScreen(
+                productId = productId,
+                onBack = { navController.popBackStack() },
+                onSave = { navController.popBackStack() }
+            )
+        }
+
+        composable(NavigationItem.EditBatch.route) { backStackEntry ->
+            val batchId = backStackEntry.arguments?.getString("batchId")
+            EditBatchScreen(
+                batchId = batchId,
+                onBack = { navController.popBackStack() },
+                onSave = { navController.popBackStack() }
+            )
+        }
 
         composable(NavigationItem.ExportBillDetail.route) { backStackEntry ->
             val billId = backStackEntry.arguments?.getString("billId")

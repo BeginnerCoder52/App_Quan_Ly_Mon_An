@@ -1,7 +1,6 @@
 package com.example.app_quan_ly_do_an.ui.screens.product
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -24,21 +23,22 @@ import com.example.app_quan_ly_do_an.ui.theme.App_Quan_Ly_Do_AnTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddProductScreen(
-    onBack: () -> Unit
+fun EditBatchScreen(
+    batchId: String?, // TODO: sẽ dùng để load data từ database
+    onBack: () -> Unit,
+    onSave: () -> Unit = {}
 ) {
-    // State for all input fields
-    var productCode by remember { mutableStateOf("") }
-    var barcode by remember { mutableStateOf("") }
-    var productName by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf("") }
-    var price by remember { mutableStateOf("") }
-    var minStock by remember { mutableStateOf("") }
+    // Load batch data from mock
+    val batch = MockProductData.getBatchByCode(batchId ?: "LOT0001")
 
-    // State for category dropdown
-    var expandedCategory by remember { mutableStateOf(false) }
-    val categories = MockProductData.getAllCategories()
+    // State for editable fields
+    var batchCode by remember { mutableStateOf(batch?.batchCode ?: "") }
+    var importDate by remember { mutableStateOf(batch?.importDate ?: "") }
+    var expiryDate by remember { mutableStateOf(batch?.expiryDate ?: "") }
+    var importPrice by remember { mutableStateOf(batch?.importPrice?.toInt()?.toString() ?: "") }
+    var initialQuantity by remember { mutableStateOf(batch?.initialQuantity?.toString() ?: "") }
+    var currentQuantity by remember { mutableStateOf(batch?.quantity?.toString() ?: "") }
+    var storageLocation by remember { mutableStateOf(batch?.storageLocation ?: "") }
 
     // Snackbar state
     val snackbarHostState = remember { SnackbarHostState() }
@@ -75,41 +75,40 @@ fun AddProductScreen(
                     }
 
                     Text(
-                        text = "Hàng hóa mới",
+                        text = "Sửa lô hàng",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold
                     )
 
                     TextButton(onClick = {
                         // Validate required fields
-                        if (productName.isEmpty()) {
+                        if (batchCode.isEmpty()) {
                             scope.launch {
                                 snackbarHostState.showSnackbar(
-                                    message = "Vui lòng nhập tên hàng",
+                                    message = "Vui lòng nhập mã lô hàng",
                                     duration = SnackbarDuration.Short
                                 )
                             }
                             return@TextButton
                         }
-                        if (category.isEmpty()) {
+                        if (importDate.isEmpty()) {
                             scope.launch {
                                 snackbarHostState.showSnackbar(
-                                    message = "Vui lòng chọn nhóm hàng",
+                                    message = "Vui lòng nhập ngày nhập",
                                     duration = SnackbarDuration.Short
                                 )
                             }
                             return@TextButton
                         }
 
-                        // TODO: Save to database
+                        // TODO: save to database
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = "✓ Thêm hàng hóa thành công",
+                                message = "✓ Cập nhật lô hàng thành công",
                                 duration = SnackbarDuration.Short
                             )
-                            // Delay to show snackbar before going back
                             kotlinx.coroutines.delay(500)
-                            onBack()
+                            onSave()
                         }
                     }) {
                         Text(
@@ -156,84 +155,56 @@ fun AddProductScreen(
                                 )
                             }
 
-                            ProductTextField(
-                                label = "Mã hàng",
-                                value = productCode,
-                                onValueChange = { productCode = it },
-                                trailingIcon = Icons.Default.QrCodeScanner
+                            // Product name (read-only)
+                            Text(
+                                text = batch?.productName ?: "Diet Coke",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(vertical = 8.dp)
                             )
 
-                            ProductTextField(
-                                label = "Mã vạch",
-                                value = barcode,
-                                onValueChange = { barcode = it },
-                                trailingIcon = Icons.Default.QrCodeScanner
-                            )
-
-                            ProductTextField(
-                                label = "Tên hàng",
-                                value = productName,
-                                onValueChange = { productName = it },
+                            EditBatchTextField(
+                                label = "Mã lô hàng",
+                                value = batchCode,
+                                onValueChange = { batchCode = it },
                                 required = true
                             )
 
-                            // Category Dropdown (Real)
-                            ExposedDropdownMenuBox(
-                                expanded = expandedCategory,
-                                onExpandedChange = { expandedCategory = !expandedCategory }
-                            ) {
-                                OutlinedTextField(
-                                    value = category,
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .menuAnchor(),
-                                    label = {
-                                        Row {
-                                            Text("Nhóm hàng")
-                                            Text(" *", color = Color.Red)
-                                        }
-                                    },
-                                    trailingIcon = {
-                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategory)
-                                    },
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = Color(0xFF0E8A38),
-                                        focusedLabelColor = Color(0xFF0E8A38)
-                                    )
-                                )
-                                ExposedDropdownMenu(
-                                    expanded = expandedCategory,
-                                    onDismissRequest = { expandedCategory = false }
-                                ) {
-                                    categories.forEach { categoryItem ->
-                                        DropdownMenuItem(
-                                            text = { Text(categoryItem) },
-                                            onClick = {
-                                                category = categoryItem
-                                                expandedCategory = false
-                                            }
-                                        )
-                                    }
-                                }
-                            }
+                            EditBatchDateField(
+                                label = "Ngày nhập",
+                                value = importDate,
+                                onValueChange = { importDate = it },
+                                required = true
+                            )
 
-                            ProductTextField(
-                                label = "Đơn vị tính",
-                                value = unit,
-                                onValueChange = { unit = it }
+                            EditBatchDateField(
+                                label = "Hạn sử dụng",
+                                value = expiryDate,
+                                onValueChange = { expiryDate = it }
                             )
-                            ProductTextField(
-                                label = "Giá bán",
-                                value = price,
-                                onValueChange = { price = it }
+
+                            EditBatchTextField(
+                                label = "Giá nhập",
+                                value = importPrice,
+                                onValueChange = { importPrice = it }
                             )
-                            ProductTextField(
-                                label = "Mức tồn kho tối thiểu",
-                                value = minStock,
-                                onValueChange = { minStock = it }
+
+                            EditBatchTextField(
+                                label = "Số lượng nhập",
+                                value = initialQuantity,
+                                onValueChange = { initialQuantity = it }
+                            )
+
+                            EditBatchTextField(
+                                label = "Số lượng tồn thực tế",
+                                value = currentQuantity,
+                                onValueChange = { currentQuantity = it }
+                            )
+
+                            EditBatchTextField(
+                                label = "Vị trí lưu trữ",
+                                value = storageLocation,
+                                onValueChange = { storageLocation = it }
                             )
                         }
                     }
@@ -245,7 +216,7 @@ fun AddProductScreen(
 
 // ---------- TEXT FIELD ----------
 @Composable
-fun ProductTextField(
+fun EditBatchTextField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
@@ -276,47 +247,46 @@ fun ProductTextField(
     )
 }
 
-// ---------- DROPDOWN GIẢ (CLICK ĐƯỢC) ----------
+// ---------- DATE FIELD ----------
 @Composable
-fun ProductDropdownField(
+fun EditBatchDateField(
     label: String,
     value: String,
-    required: Boolean = false,
-    onClick: () -> Unit
+    onValueChange: (String) -> Unit,
+    required: Boolean = false
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-    ) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {},
-            modifier = Modifier.fillMaxWidth(),
-            readOnly = true,
-            label = {
-                Row {
-                    Text(label)
-                    if (required) Text(" *", color = Color.Red)
-                }
-            },
-            trailingIcon = {
-                Icon(Icons.Default.KeyboardArrowRight, contentDescription = null)
-            },
-            shape = RoundedCornerShape(14.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF0E8A38),
-                focusedLabelColor = Color(0xFF0E8A38)
-            )
-        )
-    }
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = Modifier.fillMaxWidth(),
+        label = {
+            Row {
+                Text(label)
+                if (required) Text(" *", color = Color.Red)
+            }
+        },
+        trailingIcon = {
+            Icon(Icons.Default.CalendarToday, contentDescription = null)
+        },
+        shape = RoundedCornerShape(14.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Color(0xFF0E8A38),
+            focusedLabelColor = Color(0xFF0E8A38),
+            cursorColor = Color(0xFF0E8A38)
+        ),
+        placeholder = { Text("dd/mm/yyyy") }
+    )
 }
 
 // ---------- PREVIEW ----------
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun AddProductScreenPreview() {
+fun EditBatchScreenPreview() {
     App_Quan_Ly_Do_AnTheme {
-        AddProductScreen(onBack = {})
+        EditBatchScreen(
+            batchId = "LOT0001",
+            onBack = {}
+        )
     }
 }
+

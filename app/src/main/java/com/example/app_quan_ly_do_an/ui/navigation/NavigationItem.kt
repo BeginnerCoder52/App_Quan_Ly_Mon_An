@@ -98,9 +98,22 @@ sealed class NavigationItem(
         title = "Thêm hàng hóa"
     )
 
+    object EditProduct : NavigationItem(
+        route = "edit_product/{productId}",
+        title = "Sửa hàng hóa"
+    ) {
+        fun createRoute(productId: String) = "edit_product/$productId"
+    }
 
+    object EditBatch : NavigationItem(
+        route = "edit_batch/{batchId}",
+        title = "Sửa lô hàng"
+    ) {
+        fun createRoute(batchId: String) = "edit_batch/$batchId"
+    }
 
 }
+
 
 val navigationItems = listOf(
     NavigationItem.Home,
