@@ -1,6 +1,7 @@
 package com.example.app_quan_ly_do_an.ui.screens.product
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,14 +18,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.example.app_quan_ly_do_an.data.mock.MockProductData
 import com.example.app_quan_ly_do_an.ui.components.DetailRow
+import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
 import com.example.app_quan_ly_do_an.ui.theme.App_Quan_Ly_Do_AnTheme
 
 @Composable
 fun BatchDetailScreen(
     batchId: String?,
+    navController: NavController? = null,
     onBack: () -> Unit = {}
 ) {
+    // Load batch data from mock
+    val batch = MockProductData.getBatchByCode(batchId ?: "LOT0001")
+
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         containerColor = Color(0xFFF5F5F5)
@@ -101,7 +109,12 @@ fun BatchDetailScreen(
                                 Text(
                                     text = "Sửa",
                                     color = Color(0xFF0E8A38),
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.clickable {
+                                        navController?.navigate(
+                                            NavigationItem.EditBatch.createRoute(batchId ?: "")
+                                        )
+                                    }
                                 )
                             }
 
@@ -123,7 +136,7 @@ fun BatchDetailScreen(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             Text(
-                                text = "Diet Coke",
+                                text = batch?.productName ?: "Diet Coke",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -132,7 +145,7 @@ fun BatchDetailScreen(
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = batchId ?: "LOT0001",
+                                    text = batch?.batchCode ?: batchId ?: "LOT0001",
                                     fontSize = 14.sp,
                                     color = Color.Gray
                                 )
@@ -151,24 +164,24 @@ fun BatchDetailScreen(
                             // --- Ngày nhập | Hạn sử dụng ---
                             TwoColumnRow(
                                 leftLabel = "Ngày nhập",
-                                leftValue = "22/11/2025",
+                                leftValue = batch?.importDate ?: "22/11/2025",
                                 rightLabel = "Hạn sử dụng",
-                                rightValue = "22/11/2026"
+                                rightValue = batch?.expiryDate ?: "22/11/2026"
                             )
                             Divider()
 
                             // --- Giá nhập | Số lượng nhập ---
                             TwoColumnRow(
                                 leftLabel = "Giá nhập",
-                                leftValue = "8,000",
+                                leftValue = batch?.importPrice?.toInt()?.toString() ?: "8,000",
                                 rightLabel = "Số lượng nhập",
-                                rightValue = "100"
+                                rightValue = batch?.initialQuantity?.toString() ?: "100"
                             )
                             Divider()
 
-                            DetailRow("Số lượng tồn thực tế", "10")
+                            DetailRow("Số lượng tồn thực tế", batch?.quantity?.toString() ?: "10")
                             Divider()
-                            DetailRow("Vị trí lưu trữ", "Kho")
+                            DetailRow("Vị trí lưu trữ", batch?.storageLocation ?: "Kho")
                         }
                     }
 

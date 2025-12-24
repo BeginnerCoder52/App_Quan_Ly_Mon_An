@@ -24,17 +24,19 @@ import com.example.app_quan_ly_do_an.ui.theme.App_Quan_Ly_Do_AnTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddProductScreen(
-    onBack: () -> Unit
+fun EditProductScreen(
+    productId: String?, // TODO: sẽ dùng để load data từ database
+    onBack: () -> Unit,
+    onSave: () -> Unit = {}
 ) {
-    // State for all input fields
-    var productCode by remember { mutableStateOf("") }
-    var barcode by remember { mutableStateOf("") }
-    var productName by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf("") }
-    var price by remember { mutableStateOf("") }
-    var minStock by remember { mutableStateOf("") }
+    // Mock data - trong thực tế sẽ load từ database theo productId
+    var productCode by remember { mutableStateOf("SP000001") }
+    var barcode by remember { mutableStateOf("SP000001") }
+    var productName by remember { mutableStateOf("Diet Coke") }
+    var category by remember { mutableStateOf("Nước giải khát") }
+    var unit by remember { mutableStateOf("Lon") }
+    var price by remember { mutableStateOf("8000") }
+    var minStock by remember { mutableStateOf("10") }
 
     // State for category dropdown
     var expandedCategory by remember { mutableStateOf(false) }
@@ -75,7 +77,7 @@ fun AddProductScreen(
                     }
 
                     Text(
-                        text = "Hàng hóa mới",
+                        text = "Sửa hàng hóa",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -101,15 +103,14 @@ fun AddProductScreen(
                             return@TextButton
                         }
 
-                        // TODO: Save to database
+                        // TODO: save to database
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = "✓ Thêm hàng hóa thành công",
+                                message = "✓ Cập nhật hàng hóa thành công",
                                 duration = SnackbarDuration.Short
                             )
-                            // Delay to show snackbar before going back
                             kotlinx.coroutines.delay(500)
-                            onBack()
+                            onSave()
                         }
                     }) {
                         Text(
@@ -156,21 +157,21 @@ fun AddProductScreen(
                                 )
                             }
 
-                            ProductTextField(
+                            EditProductTextField(
                                 label = "Mã hàng",
                                 value = productCode,
                                 onValueChange = { productCode = it },
                                 trailingIcon = Icons.Default.QrCodeScanner
                             )
 
-                            ProductTextField(
+                            EditProductTextField(
                                 label = "Mã vạch",
                                 value = barcode,
                                 onValueChange = { barcode = it },
                                 trailingIcon = Icons.Default.QrCodeScanner
                             )
 
-                            ProductTextField(
+                            EditProductTextField(
                                 label = "Tên hàng",
                                 value = productName,
                                 onValueChange = { productName = it },
@@ -220,17 +221,19 @@ fun AddProductScreen(
                                 }
                             }
 
-                            ProductTextField(
+                            EditProductTextField(
                                 label = "Đơn vị tính",
                                 value = unit,
                                 onValueChange = { unit = it }
                             )
-                            ProductTextField(
+
+                            EditProductTextField(
                                 label = "Giá bán",
                                 value = price,
                                 onValueChange = { price = it }
                             )
-                            ProductTextField(
+
+                            EditProductTextField(
                                 label = "Mức tồn kho tối thiểu",
                                 value = minStock,
                                 onValueChange = { minStock = it }
@@ -245,7 +248,7 @@ fun AddProductScreen(
 
 // ---------- TEXT FIELD ----------
 @Composable
-fun ProductTextField(
+fun EditProductTextField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
@@ -278,7 +281,7 @@ fun ProductTextField(
 
 // ---------- DROPDOWN GIẢ (CLICK ĐƯỢC) ----------
 @Composable
-fun ProductDropdownField(
+fun EditProductDropdownField(
     label: String,
     value: String,
     required: Boolean = false,
@@ -315,8 +318,12 @@ fun ProductDropdownField(
 // ---------- PREVIEW ----------
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun AddProductScreenPreview() {
+fun EditProductScreenPreview() {
     App_Quan_Ly_Do_AnTheme {
-        AddProductScreen(onBack = {})
+        EditProductScreen(
+            productId = "SP000001",
+            onBack = {}
+        )
     }
 }
+
