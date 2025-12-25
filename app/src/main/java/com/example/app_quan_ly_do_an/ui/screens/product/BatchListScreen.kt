@@ -6,10 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Close
@@ -22,7 +20,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
-import kotlinx.coroutines.launch
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavController
 import com.example.app_quan_ly_do_an.data.model.Batch
@@ -42,7 +39,6 @@ fun BatchListScreen(
 
     // Snackbar state
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     // Filter batches based on search query
     val filteredBatches = remember(searchQuery) {
@@ -58,16 +54,7 @@ fun BatchListScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = Color(0xFFF5F5F5),
-        contentWindowInsets = WindowInsets(0),
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {},
-                shape = CircleShape,
-                containerColor = Color(0xFF0E8A38)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
-            }
-        }
+        contentWindowInsets = WindowInsets(0)
     ) { paddingValues ->
 
         Column(
