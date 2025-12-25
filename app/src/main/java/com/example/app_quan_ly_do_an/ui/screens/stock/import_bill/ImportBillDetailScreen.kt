@@ -25,12 +25,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
+
 
 data class BillItemDetail(val name: String, val qty: Int, val price: Double)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImportBillDetailScreen(
+    navController: NavController,
     billId: String?,
     onBack: () -> Unit
 ) {
@@ -103,7 +106,7 @@ fun ImportBillDetailScreen(
                                 "Sửa",
                                 color = primaryColor,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.clickable { /* Handle Edit */ }
+                                modifier = Modifier.clickable { navController.navigate(NavigationItem.EditImportBill.createRoute(billId ?: "0")) }
                             )
                         }
 

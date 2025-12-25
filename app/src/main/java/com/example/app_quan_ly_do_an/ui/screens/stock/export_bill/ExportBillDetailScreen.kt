@@ -22,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
+
 // import com.example.app_quan_ly_do_an.R
 
 // --- MOCK DATA CHO CHI TIẾT ---
@@ -119,7 +121,9 @@ fun ExportBillDetailScreen(
                                 "Sửa",
                                 color = primaryColor,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.clickable { /* Handle Edit */ }
+                                modifier = Modifier.clickable {
+                                    navController.navigate(NavigationItem.EditExportBill.createRoute(mockDetail.id))
+                                }
                             )
                         }
 

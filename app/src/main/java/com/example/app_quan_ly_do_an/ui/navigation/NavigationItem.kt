@@ -57,7 +57,12 @@ sealed class NavigationItem(
         fun createRoute(billId: String) = "import_bill_detail/$billId"
     }
     //HIEN'S CODE END
-
+    object EditImportBill : NavigationItem(
+        route = "edit_import_bill/{billId}",
+        title = "Sửa phiếu nhập"
+    ) {
+        fun createRoute(billId: String) = "edit_import_bill/$billId"
+    }
     object ProductDetail : NavigationItem(
         route = "product_detail/{productId}",
         title = "Chi tiết hàng hóa",
@@ -65,7 +70,6 @@ sealed class NavigationItem(
     ) {
         fun createRoute(productId: String) = "product_detail/$productId"
     }
-
     object AddExportBill : NavigationItem(
         route = "add_export_bill",
         title = "Tạo phiếu xuất",
@@ -80,40 +84,13 @@ sealed class NavigationItem(
         fun createRoute(billId: String) = "export_bill_detail/$billId"
     }
 
-
-    object BatchList : NavigationItem(
-        route = "batch_list/{productId}",
-        title = "Danh sách lô hàng"
+    object EditExportBill : NavigationItem(
+        route = "edit_export_bill/{billId}",
+        title = "Chỉnh sửa phiếu xuất"
     ) {
-        fun createRoute(productId: String) = "batch_list/$productId"
+        fun createRoute(billId: String) = "edit_export_bill/$billId"
     }
-    object BatchDetail : NavigationItem(
-        route = "batch_detail/{batchId}",
-        title = "Chi tiết lô hàng"
-    ) {
-        fun createRoute(batchId: String) = "batch_detail/$batchId"
-    }
-    object AddProduct : NavigationItem(
-        route = "add_product",
-        title = "Thêm hàng hóa"
-    )
-
-    object EditProduct : NavigationItem(
-        route = "edit_product/{productId}",
-        title = "Sửa hàng hóa"
-    ) {
-        fun createRoute(productId: String) = "edit_product/$productId"
-    }
-
-    object EditBatch : NavigationItem(
-        route = "edit_batch/{batchId}",
-        title = "Sửa lô hàng"
-    ) {
-        fun createRoute(batchId: String) = "edit_batch/$batchId"
-    }
-
 }
-
 
 val navigationItems = listOf(
     NavigationItem.Home,

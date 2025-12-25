@@ -1,36 +1,26 @@
 package com.example.app_quan_ly_do_an.ui.navigation
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-
 import com.example.app_quan_ly_do_an.ui.screens.home.HomeScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.StockScreen
 import com.example.app_quan_ly_do_an.ui.screens.notification.NotificationScreen
-import com.example.app_quan_ly_do_an.ui.screens.product.BatchDetailScreen
 import com.example.app_quan_ly_do_an.ui.screens.profile.ProfileScreen
 //HIEN'S CODE BEGIN
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.AddImportBillScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.ImportBillDetailScreen
 //HIEN'S CODE END
+import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.EditImportBillScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductDetailScreen
-
 import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.ExportBillDetailScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.AddExportBillScreen
-
-import com.example.app_quan_ly_do_an.ui.screens.product.BatchListScreen
-import com.example.app_quan_ly_do_an.ui.screens.product.AddProductScreen
-import com.example.app_quan_ly_do_an.ui.screens.product.EditProductScreen
-import com.example.app_quan_ly_do_an.ui.screens.product.EditBatchScreen
-
-
+import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.EditExportBillScreen
 /**
  * Defines the navigation graph for the application.
  *
@@ -43,11 +33,10 @@ import com.example.app_quan_ly_do_an.ui.screens.product.EditBatchScreen
 fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues) {
     NavHost(
         navController = navController,
-        startDestination = NavigationItem.Home.route,
-        modifier = Modifier.padding(innerPadding)
+        startDestination = NavigationItem.Home.route
     ) {
         composable(NavigationItem.Home.route) {
-            HomeScreen()
+            HomeScreen(navController = navController)
         }
 
         composable(NavigationItem.Product.route) {
@@ -95,50 +84,16 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             val productId = backStackEntry.arguments?.getString("productId")
             ProductDetailScreen(
                 productId = productId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(NavigationItem.EditImportBill.route) { backStackEntry ->
+            val billId = backStackEntry.arguments?.getString("billId")
+            EditImportBillScreen(
                 navController = navController,
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(NavigationItem.BatchList.route) { backStackEntry ->
-            val productId = backStackEntry.arguments?.getString("productId")
-            BatchListScreen(
-                productId = productId,
-                navController = navController,
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(NavigationItem.BatchDetail.route) { backStackEntry ->
-            val batchId = backStackEntry.arguments?.getString("batchId")
-            BatchDetailScreen(
-                batchId = batchId,
-                navController = navController,
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(NavigationItem.AddProduct.route) {
-            AddProductScreen(
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(NavigationItem.EditProduct.route) { backStackEntry ->
-            val productId = backStackEntry.arguments?.getString("productId")
-            EditProductScreen(
-                productId = productId,
+                billId = billId,
                 onBack = { navController.popBackStack() },
-                onSave = { navController.popBackStack() }
-            )
-        }
-
-        composable(NavigationItem.EditBatch.route) { backStackEntry ->
-            val batchId = backStackEntry.arguments?.getString("batchId")
-            EditBatchScreen(
-                batchId = batchId,
-                onBack = { navController.popBackStack() },
-                onSave = { navController.popBackStack() }
+                bottomPadding = innerPadding.calculateBottomPadding() // Quan trọng để tránh BottomBar
             )
         }
 
@@ -157,5 +112,14 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             )
         }
 
+        composable(NavigationItem.EditExportBill.route) { backStackEntry ->
+            val billId = backStackEntry.arguments?.getString("billId")
+            EditExportBillScreen(
+                navController = navController,
+                billId = billId,
+                onBack = { navController.popBackStack() },
+                bottomPadding = innerPadding.calculateBottomPadding()
+            )
+        }
     }
 }

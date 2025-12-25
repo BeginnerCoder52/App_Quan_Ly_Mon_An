@@ -15,7 +15,7 @@ data class Product(
 data class InventoryLot(
     val lotId: String = "",
     val lotCode: String = "",
-    val productId_FK: String = "",        // Link tới productId
+    val productId: String = "",        // Link tới productId
     val importPrice: Double = 0.0,
     val expiryDate: Long = 0L,            // Hạn sử dụng (Timestamp)
     val initialQuantity: Int = 0,
@@ -37,7 +37,7 @@ data class ExportBillDetail(
     val exportBillDetailId: String = "",
     val exportBillDetailCode: String = "",
     val exportBillId: String = "",        // FK: Hóa đơn xuất
-    val productId_FK: String = "",        // FK: Sản phẩm
+    val productId: String = "",        // FK: Sản phẩm
     val quantity: Int = 0,
     val sellPrice: Double = 0.0
 )
@@ -56,7 +56,12 @@ data class ImportBillDetail(
     val importBillDetailId: String = "",
     val importBillDetailCode: String = "",
     val importBillId: String = "",        // FK: Hóa đơn nhập
-    val productId_FK: String = "",        // FK: Sản phẩm
+    val productId: String = "",        // FK: Sản phẩm
     val quantity: Int = 0,
     val importPrice: Double = 0.0
+)
+
+data class Category(
+    val categoryId: String = "",
+    val categoryName: String = ""
 )
