@@ -11,6 +11,7 @@ import com.example.app_quan_ly_do_an.ui.screens.home.HomeScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.StockScreen
 import com.example.app_quan_ly_do_an.ui.screens.notification.NotificationScreen
+import com.example.app_quan_ly_do_an.ui.screens.product.BatchDetailScreen
 import com.example.app_quan_ly_do_an.ui.screens.profile.ProfileScreen
 //HIEN'S CODE BEGIN
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.AddImportBillScreen
@@ -21,6 +22,12 @@ import com.example.app_quan_ly_do_an.ui.screens.product.ProductDetailScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.ExportBillDetailScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.AddExportBillScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.EditExportBillScreen
+
+import com.example.app_quan_ly_do_an.ui.screens.product.BatchListScreen
+import com.example.app_quan_ly_do_an.ui.screens.product.AddProductScreen
+import com.example.app_quan_ly_do_an.ui.screens.product.EditProductScreen
+import com.example.app_quan_ly_do_an.ui.screens.product.EditBatchScreen
+
 /**
  * Defines the navigation graph for the application.
  *
@@ -84,7 +91,49 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             val productId = backStackEntry.arguments?.getString("productId")
             ProductDetailScreen(
                 productId = productId,
+                navController = navController,
                 onBack = { navController.popBackStack() }
+            )
+        }
+        composable(NavigationItem.BatchList.route) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId")
+            BatchListScreen(
+                productId = productId,
+                navController = navController,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(NavigationItem.BatchDetail.route) { backStackEntry ->
+            val batchId = backStackEntry.arguments?.getString("batchId")
+            BatchDetailScreen(
+                batchId = batchId,
+                navController = navController,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(NavigationItem.AddProduct.route) {
+            AddProductScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(NavigationItem.EditProduct.route) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId")
+            EditProductScreen(
+                productId = productId,
+                onBack = { navController.popBackStack() },
+                onSave = { navController.popBackStack() }
+            )
+        }
+
+        composable(NavigationItem.EditBatch.route) { backStackEntry ->
+            val batchId = backStackEntry.arguments?.getString("batchId")
+            EditBatchScreen(
+                batchId = batchId,
+                onBack = { navController.popBackStack() },
+                onSave = { navController.popBackStack() }
             )
         }
         composable(NavigationItem.EditImportBill.route) { backStackEntry ->
