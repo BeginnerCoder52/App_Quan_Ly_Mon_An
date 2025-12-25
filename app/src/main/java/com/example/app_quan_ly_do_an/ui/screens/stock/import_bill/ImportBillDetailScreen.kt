@@ -35,7 +35,6 @@ data class BillItemDetail(val name: String, val qty: Int, val price: Double)
 fun ImportBillDetailScreen(
     navController: NavController,
     billId: String?,
-    onBack: () -> Unit
 ) {
     // Màu chủ đạo
     val primaryColor = Color(0xFF006633)
@@ -61,7 +60,7 @@ fun ImportBillDetailScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },

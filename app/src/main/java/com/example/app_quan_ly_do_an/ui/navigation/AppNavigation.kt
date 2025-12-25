@@ -75,8 +75,8 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
         composable(NavigationItem.ImportBillDetail.route) { backStackEntry ->
             val billId = backStackEntry.arguments?.getString("billId")
             ImportBillDetailScreen(
+                navController = navController,
                 billId = billId,
-                onBack = { navController.popBackStack() }
             )
         }
         //HIEN'S CODE END
