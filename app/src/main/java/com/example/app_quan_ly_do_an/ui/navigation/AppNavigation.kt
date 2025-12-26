@@ -47,7 +47,7 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
         }
 
         composable(NavigationItem.Product.route) {
-            ProductScreen(navController = navController)
+            ProductScreen(navController = navController, innerPadding = innerPadding)
         }
         //Lưu biến để quay về đúng tab trước
         composable(
@@ -123,8 +123,7 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             val productId = backStackEntry.arguments?.getString("productId")
             EditProductScreen(
                 productId = productId,
-                onBack = { navController.popBackStack() },
-                onSave = { navController.popBackStack() }
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -133,7 +132,6 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             EditBatchScreen(
                 batchId = batchId,
                 onBack = { navController.popBackStack() },
-                onSave = { navController.popBackStack() }
             )
         }
         composable(NavigationItem.EditImportBill.route) { backStackEntry ->

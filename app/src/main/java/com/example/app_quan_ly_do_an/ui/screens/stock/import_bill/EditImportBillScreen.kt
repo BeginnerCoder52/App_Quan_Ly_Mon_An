@@ -1,6 +1,9 @@
 package com.example.app_quan_ly_do_an.ui.screens.stock.import_bill
 
+import android.app.DatePickerDialog
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,31 +18,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import kotlinx.coroutines.delay
-
-// --- DÙNG LẠI DATA TỪ ADD SCREEN HOẶC KHAI BÁO MỚI ---
-data class EditImportProductOption(val id: String, val name: String, val defaultPrice: Double)
-
-val editImportAvailableProducts = listOf(
-    EditImportProductOption("1", "Diet Coke", 10000.0),
-    EditImportProductOption("2", "Pepsi Zero", 12000.0),
-    EditImportProductOption("3", "Fanta Cam", 11000.0),
-    EditImportProductOption("4", "7Up", 10500.0),
-)
-
-// Class State cho từng dòng sản phẩm khi sửa
-class EditImportItemState {
-    val id: Long = System.currentTimeMillis()
-    var selectedProduct by mutableStateOf<EditImportProductOption?>(null)
-    var quantity by mutableStateOf("")
-    var price by mutableStateOf("")
-}
+import coil.compose.AsyncImage
+import com.example.app_quan_ly_do_an.data.model.Product
+import com.example.app_quan_ly_do_an.ui.viewmodel.import_bill.EditImportBillViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,49 +38,42 @@ fun EditImportBillScreen(
     navController: NavController,
     billId: String?,
     onBack: () -> Unit,
-    bottomPadding: Dp = 0.dp
+    bottomPadding: Dp = 0.dp,
+    viewModel: EditImportBillViewModel = viewModel()
 ) {
     val primaryColor = Color(0xFF006633)
     val backgroundColor = Color(0xFFF5F5F5)
+    val context = LocalContext.current
+    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
-    // State dữ liệu
-    var billCode by remember { mutableStateOf("") }
-    var supplier by remember { mutableStateOf("") } // Đặc thù phiếu nhập
-    var billDate by remember { mutableStateOf("") }
+    val products by viewModel.products.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val isSaving by viewModel.isSaving.collectAsState()
+    val saveSuccess by viewModel.saveSuccess.collectAsState()
 
-    val importItems = remember { mutableStateListOf<EditImportItemState>() }
-    var isLoading by remember { mutableStateOf(true) }
-
-    // --- GIẢ LẬP LOAD DỮ LIỆU TỪ SERVER/DB ---
+    // Load data khi vào màn hình
     LaunchedEffect(billId) {
-        delay(500) // Giả lập mạng lag 0.5s
-
-        // Fill dữ liệu giả
-        billCode = "PN00${billId ?: "X"}"
-        supplier = "Công ty CP Food"
-        billDate = "07/12/2025"
-
-        // Fill danh sách sản phẩm cũ
-        importItems.add(EditImportItemState().apply {
-            selectedProduct = editImportAvailableProducts.find { it.name == "Diet Coke" }
-            quantity = "100"
-            price = "9500" // Giá nhập có thể khác giá bán
-        })
-        importItems.add(EditImportItemState().apply {
-            selectedProduct = editImportAvailableProducts.find { it.name == "Fanta Cam" }
-            quantity = "200"
-            price = "10500"
-        })
-
-        isLoading = false
+        billId?.let { viewModel.loadBillData(it) }
     }
 
-    // Tính tổng tiền tự động
+    // Xử lý kết quả lưu
+    LaunchedEffect(saveSuccess) {
+        saveSuccess?.let {
+            if (it) {
+                Toast.makeText(context, "Cập nhật thành công!", Toast.LENGTH_SHORT).show()
+                onBack()
+            } else {
+                Toast.makeText(context, "Cập nhật thất bại!", Toast.LENGTH_SHORT).show()
+            }
+            viewModel.resetSaveStatus()
+        }
+    }
+
     val totalAmount by remember {
         derivedStateOf {
-            importItems.sumOf { item ->
-                val q = item.quantity.toLongOrNull() ?: 0
-                val p = item.price.toDoubleOrNull() ?: 0.0
+            viewModel.importItems.sumOf { item ->
+                val q = item.quantity.value.toDoubleOrNull() ?: 0.0
+                val p = item.price.value.toDoubleOrNull() ?: 0.0
                 q * p
             }
         }
@@ -110,141 +94,119 @@ fun EditImportBillScreen(
             )
         },
         bottomBar = {
-            // Thanh Bottom Bar chứa nút Lưu
-            Surface(
-                shadowElevation = 10.dp,
-                color = Color.White,
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-            ) {
+            Surface(shadowElevation = 10.dp, color = Color.White, shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("Tổng tiền", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            "%,.0f".format(totalAmount),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = primaryColor
-                        )
+                        Text("%,.0f đ".format(totalAmount), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = primaryColor)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
-                        onClick = {
-                            // TODO: Logic Update Database
-                            onBack()
-                        },
+                        onClick = { viewModel.updateImportBill() },
+                        enabled = !isSaving && !isLoading,
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("Lưu thay đổi", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        if (isSaving) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+                        else Text("Lưu thay đổi", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
     ) { innerPadding ->
         if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = primaryColor)
-            }
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = primaryColor) }
         } else {
             Column(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
+                modifier = Modifier.padding(innerPadding).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // --- THÔNG TIN CƠ BẢN ---
                 Text("Thông tin cơ bản", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
+                Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(12.dp)) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        // Mã phiếu
                         OutlinedTextField(
-                            value = billCode,
-                            onValueChange = { billCode = it },
+                            value = viewModel.billCode.value,
+                            onValueChange = { viewModel.billCode.value = it },
                             label = { Text("Mã phiếu nhập") },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp)
                         )
-
-                        // Nhà cung cấp (Khác biệt so với Export)
                         OutlinedTextField(
-                            value = supplier,
-                            onValueChange = { supplier = it },
+                            value = viewModel.supplier.value,
+                            onValueChange = { viewModel.supplier.value = it },
                             label = { Text("Nhà cung cấp") },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp)
                         )
-
                         // Ngày nhập
-                        OutlinedTextField(
-                            value = billDate,
-                            onValueChange = { billDate = it },
-                            label = { Text("Ngày nhập") },
-                            modifier = Modifier.fillMaxWidth(),
-                            trailingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
-                            shape = RoundedCornerShape(8.dp)
-                        )
+                        Box(Modifier.fillMaxWidth().clickable {
+                            val calendar = Calendar.getInstance()
+                            calendar.time = viewModel.billDate.value
+                            DatePickerDialog(context, { _, y, m, d ->
+                                val cal = Calendar.getInstance()
+                                cal.set(y, m, d)
+                                viewModel.billDate.value = cal.time
+                            }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+                        }) {
+                            OutlinedTextField(
+                                value = sdf.format(viewModel.billDate.value),
+                                onValueChange = {},
+                                readOnly = true,
+                                enabled = false,
+                                label = { Text("Ngày nhập") },
+                                modifier = Modifier.fillMaxWidth(),
+                                trailingIcon = { Icon(Icons.Default.CalendarToday, null) },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(disabledTextColor = Color.Black, disabledBorderColor = Color.Gray, disabledLabelColor = Color.Gray, disabledTrailingIconColor = Color.Gray)
+                            )
+                        }
                     }
                 }
 
-                // --- DANH SÁCH SẢN PHẨM ---
-                importItems.forEach { itemState ->
-                    EditImportProductItemView(
+                Text("Danh sách sản phẩm", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                viewModel.importItems.forEach { itemState ->
+                    EditImportProductInputItem(
                         itemState = itemState,
+                        availableProducts = products,
                         primaryColor = primaryColor,
-                        onDelete = { importItems.remove(itemState) }
+                        onDelete = { viewModel.removeImportItem(itemState) }
                     )
                 }
 
                 Button(
-                    onClick = { importItems.add(EditImportItemState()) },
+                    onClick = { viewModel.addImportItem() },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
                     shape = RoundedCornerShape(24.dp)
                 ) {
                     Text("Thêm sản phẩm", fontWeight = FontWeight.Bold)
                 }
-
                 Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
 }
 
-// Component Item nhập liệu (Logic giống hệt EditExport nhưng dùng data của Import)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditImportProductItemView(
-    itemState: EditImportItemState,
+fun EditImportProductInputItem(
+    itemState: EditImportBillViewModel.ImportItemState,
+    availableProducts: List<Product>,
     primaryColor: Color,
     onDelete: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Header: Dropdown & Xóa
+    Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.weight(1f)) {
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = !expanded }
-                    ) {
+                    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
                         OutlinedTextField(
-                            value = itemState.selectedProduct?.name ?: "",
+                            value = itemState.selectedProduct.value?.productName ?: "",
                             onValueChange = {},
                             readOnly = true,
                             placeholder = { Text("Chọn sản phẩm") },
@@ -252,19 +214,13 @@ fun EditImportProductItemView(
                             modifier = Modifier.menuAnchor().fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp)
                         )
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            editImportAvailableProducts.forEach { product ->
+                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            availableProducts.forEach { product ->
                                 DropdownMenuItem(
-                                    text = { Text(product.name) },
+                                    text = { Text(product.productName) },
                                     onClick = {
-                                        itemState.selectedProduct = product
-                                        // Tự điền giá nếu chưa có
-                                        if (itemState.price.isEmpty()) {
-                                            itemState.price = product.defaultPrice.toInt().toString()
-                                        }
+                                        itemState.selectedProduct.value = product
+                                        if (itemState.price.value.isEmpty()) itemState.price.value = product.sellPrice.toInt().toString()
                                         expanded = false
                                     }
                                 )
@@ -272,44 +228,61 @@ fun EditImportProductItemView(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
-                }
+                IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red) }
             }
 
-            // Ảnh Preview
-            if (itemState.selectedProduct != null) {
-                Spacer(modifier = Modifier.height(12.dp))
+            if (itemState.selectedProduct.value != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(40.dp).background(Color.LightGray, RoundedCornerShape(4.dp)), contentAlignment = Alignment.Center) {
-                        Text("IMG", fontSize = 10.sp)
-                    }
+                    AsyncImage(
+                        model = itemState.selectedProduct.value?.productImage,
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp).background(Color.LightGray, RoundedCornerShape(4.dp))
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(itemState.selectedProduct!!.name, fontWeight = FontWeight.Bold)
+                    Text(itemState.selectedProduct.value!!.productName, fontWeight = FontWeight.Bold)
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-            // Số lượng
-            OutlinedTextField(
-                value = itemState.quantity,
-                onValueChange = { itemState.quantity = it },
-                label = { Text("Số lượng") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            // Đơn giá nhập
-            OutlinedTextField(
-                value = itemState.price,
-                onValueChange = { itemState.price = it },
-                label = { Text("Đơn giá nhập") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp)
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = itemState.quantity.value,
+                    onValueChange = { itemState.quantity.value = it },
+                    label = { Text("SL") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(8.dp)
+                )
+                OutlinedTextField(
+                    value = itemState.price.value,
+                    onValueChange = { itemState.price.value = it },
+                    label = { Text("Giá nhập") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(2f),
+                    shape = RoundedCornerShape(8.dp)
+                )
+            }
+
+            // Hạn sử dụng
+            Box(Modifier.fillMaxWidth().clickable {
+                val calendar = Calendar.getInstance()
+                DatePickerDialog(context, { _, y, m, d ->
+                    val cal = Calendar.getInstance()
+                    cal.set(y, m, d)
+                    itemState.expiryDate.value = cal.time
+                }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+            }) {
+                OutlinedTextField(
+                    value = itemState.expiryDate.value?.let { sdf.format(it) } ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    enabled = false,
+                    label = { Text("Hạn sử dụng") },
+                    trailingIcon = { Icon(Icons.Default.CalendarToday, null) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = OutlinedTextFieldDefaults.colors(disabledTextColor = Color.Black, disabledBorderColor = Color.Gray, disabledLabelColor = Color.Gray, disabledTrailingIconColor = Color.Gray)
+                )
+            }
         }
     }
 }

@@ -1,4 +1,7 @@
 package com.example.app_quan_ly_do_an.data.model
+
+import java.util.Date
+
 // 1. Sản phẩm (Product)
 data class Product(
     val productId: String = "",           // Document ID của Firestore
@@ -8,7 +11,8 @@ data class Product(
     val productCategory: String = "",      // Danh mục
     val unit: String = "",                // kg, gói, chai...
     val sellPrice: Double = 0.0,
-    val minStock: Int = 0                 // Mức tồn kho tối thiểu
+    val minStock: Int = 0,                // Mức tồn kho tối thiểu
+    val totalStock: Int = 0               // Tổng tồn kho (Số lượng từ tất cả các lô)
 )
 
 // 2. Chi tiết Lô hàng & Tồn kho (InventoryLot)
@@ -17,18 +21,18 @@ data class InventoryLot(
     val lotCode: String = "",
     val productId: String = "",        // Link tới productId
     val importPrice: Double = 0.0,
-    val expiryDate: Long = 0L,            // Hạn sử dụng (Timestamp)
+    val expiryDate: Date? = null,         // Hạn sử dụng (Date)
     val initialQuantity: Int = 0,
     val currentQuantity: Int = 0,
     val location: String = "",            // Vị trí lưu trữ
-    val importDate: Long = 0L             // Ngày nhập (Timestamp)
+    val importDate: Date? = null          // Ngày nhập (Date)
 )
 
 // 3. Hóa đơn xuất hàng (ExportBill)
 data class ExportBill(
     val exportBillId: String = "",
     val exportBillCode: String = "",
-    val date: Long = 0L,                  // Ngày tạo (Timestamp)
+    val date: Date? = null,               // Ngày tạo (Timestamp)
     val totalAmount: Double = 0.0
 )
 
@@ -46,8 +50,9 @@ data class ExportBillDetail(
 data class ImportBill(
     val importBillId: String = "",
     val importBillIdCode: String = "",
-    val date: Long = 0L,                  // Ngày nhập (Timestamp)
-    val supplier: String = "",            // Nhà cung cấp
+    // Dùng Date để Firestore tự map từ Timestamp
+    val date: Date? = null,
+    val supplier: String = "",
     val totalAmount: Double = 0.0
 )
 
@@ -55,10 +60,11 @@ data class ImportBill(
 data class ImportBillDetail(
     val importBillDetailId: String = "",
     val importBillDetailCode: String = "",
-    val importBillId: String = "",        // FK: Hóa đơn nhập
-    val productId: String = "",        // FK: Sản phẩm
+    val importBillId: String = "",
+    val productId: String = "",
     val quantity: Int = 0,
-    val importPrice: Double = 0.0
+    val importPrice: Double = 0.0,
+    val expiryDate: Date? = null,
 )
 
 data class Category(

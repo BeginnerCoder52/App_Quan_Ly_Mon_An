@@ -1,167 +1,161 @@
 package com.example.app_quan_ly_do_an.ui.screens.stock.export_bill
-import androidx.compose.foundation.Image
+
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
-
-// import com.example.app_quan_ly_do_an.R
-
-// --- MOCK DATA CHO CHI TIẾT ---
-data class ExportBillDetail(
-    val id: String,
-    val code: String,
-    val date: String,
-    val totalAmount: Double,
-    val products: List<BillProductItem>
-)
-
-data class BillProductItem(
-    val name: String,
-    val quantity: Int,
-    val price: Double,
-    val imageUrl: String = ""
-)
+import com.example.app_quan_ly_do_an.ui.viewmodel.export_bill.ExportBillDetailViewModel
+import com.example.app_quan_ly_do_an.ui.viewmodel.export_bill.ExportDetailUiItem
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExportBillDetailScreen(
     navController: NavController,
-    billId: String? // Nhận ID từ màn hình trước
+    billId: String?,
+    viewModel: ExportBillDetailViewModel = viewModel()
 ) {
     val primaryColor = Color(0xFF006633)
     val backgroundColor = Color(0xFFF5F5F5)
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
-    // Dữ liệu giả lập
-    val mockDetail = ExportBillDetail(
-        id = "1",
-        code = "EBI0001",
-        date = "22/11/2025",
-        totalAmount = 1000000.0,
-        products = listOf(
-            BillProductItem("Diet Coke", 100, 10000.0),
-            BillProductItem("Diet Coke", 100, 10000.0),
-            BillProductItem("Pepsi Zero", 50, 12000.0)
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(billId) {
+        billId?.let { viewModel.loadBillDetails(it) }
+    }
+
+    LaunchedEffect(uiState.deleteSuccess) {
+        uiState.deleteSuccess?.let { success ->
+            if (success) {
+                Toast.makeText(context, "Xóa phiếu xuất thành công!", Toast.LENGTH_SHORT).show()
+                navController.popBackStack()
+            } else {
+                Toast.makeText(context, "Xóa thất bại!", Toast.LENGTH_SHORT).show()
+            }
+            viewModel.resetDeleteStatus()
+        }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Xác nhận xóa") },
+            text = { Text("Bạn có chắc muốn xóa phiếu xuất này? Số lượng sản phẩm sẽ được cộng hoàn lại vào kho.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        billId?.let { viewModel.deleteBill(it) }
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                ) {
+                    Text("Xóa", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Hủy") }
+            }
         )
-    )
+    }
 
     Scaffold(
         containerColor = backgroundColor,
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        "Thông tin phiếu xuất",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
-                },
+                title = { Text("Thông tin phiếu xuất", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                    Box {
+                        IconButton(onClick = { showMenu = !showMenu }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                        }
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Xóa phiếu xuất", color = Color.Red) },
+                                onClick = {
+                                    showMenu = false
+                                    showDeleteDialog = true
+                                },
+                                leadingIcon = { Icon(Icons.Default.Delete, tint = Color.Red, contentDescription = null) }
+                            )
+                        }
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.White
-                )
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
             )
         }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // --- PHẦN 1: THÔNG TIN CƠ BẢN ---
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        // Header của Card
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "Thông tin cơ bản",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
-                            Text(
-                                "Sửa",
-                                color = primaryColor,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.clickable {
-                                    navController.navigate(NavigationItem.EditExportBill.createRoute(mockDetail.id))
-                                }
-                            )
+        if (uiState.isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = primaryColor)
+            }
+        } else {
+            val bill = uiState.billInfo
+            val details = uiState.details
+            LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                item {
+                    Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(12.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Thông tin cơ bản", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Text("Sửa", color = primaryColor, fontWeight = FontWeight.Bold, modifier = Modifier.clickable {
+                                    navController.navigate(NavigationItem.EditExportBill.createRoute(billId ?: "0"))
+                                })
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            InfoField(label = "Mã phiếu xuất", value = bill?.exportBillCode ?: "...", showCopyIcon = true, primaryColor = primaryColor)
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
+                            InfoField(label = "Ngày xuất", value = bill?.date?.let { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(it) } ?: "...")
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
+                            InfoField(label = "Tổng tiền", value = "${"%,.0f".format(bill?.totalAmount ?: 0.0)} đ", primaryColor = primaryColor)
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Mã phiếu xuất
-                        InfoField(label = "Mã phiếu xuất", value = mockDetail.code, showCopyIcon = true, primaryColor = primaryColor)
-                        Divider(color = Color(0xFFF0F0F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 12.dp))
-
-                        // Ngày xuất
-                        InfoField(label = "Ngày xuất", value = mockDetail.date)
-                        Divider(color = Color(0xFFF0F0F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 12.dp))
-
-                        // Tổng tiền
-                        InfoField(label = "Tổng tiền", value = "%,.0f".format(mockDetail.totalAmount))
                     }
                 }
-            }
-
-            // --- PHẦN 2: DANH SÁCH SẢN PHẨM ---
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            "Danh sách sản phẩm",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            modifier = Modifier.padding(bottom = 12.dp)
-                        )
-
-                        mockDetail.products.forEachIndexed { index, product ->
-                            ProductDetailItem(product)
-                            if (index < mockDetail.products.size - 1) {
-                                Divider(color = Color(0xFFF0F0F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 8.dp))
+                item {
+                    Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(12.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Danh sách sản phẩm", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 12.dp))
+                            details.forEachIndexed { index, item ->
+                                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Box(modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFEEEEEE)), contentAlignment = Alignment.Center) {
+                                        Text("IMG", fontSize = 10.sp, color = Color.Gray)
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(text = item.productName, fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                                        Text(text = "Số lượng: ${item.quantity}", color = Color.Gray, fontSize = 13.sp)
+                                    }
+                                    Text(text = "${"%,.0f".format(item.sellPrice)} đ", color = Color.Gray, fontSize = 13.sp)
+                                }
+                                if (index < details.size - 1) HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color(0xFFF0F0F0))
                             }
                         }
                     }
@@ -170,8 +164,6 @@ fun ExportBillDetailScreen(
         }
     }
 }
-
-// --- COMPONENT CON: Dòng thông tin (Label + Value) ---
 @Composable
 fun InfoField(
     label: String,
@@ -195,52 +187,10 @@ fun InfoField(
                     Icons.Default.ContentCopy,
                     contentDescription = "Copy",
                     tint = primaryColor,
-                    modifier = Modifier.size(16.dp).clickable { /* Handle Copy */ }
+                    modifier = Modifier.size(16.dp).clickable { }
                 )
             }
         }
     }
 }
 
-// --- COMPONENT CON: Item sản phẩm trong danh sách ---
-@Composable
-fun ProductDetailItem(item: BillProductItem) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Ảnh placeholder
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFFEEEEEE)), // Màu xám thay cho ảnh
-            contentAlignment = Alignment.Center
-        ) {
-            Text("IMG", fontSize = 10.sp, color = Color.Gray)
-
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = item.name,
-                fontWeight = FontWeight.Medium,
-                fontSize = 15.sp
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Số lượng: ${item.quantity}",
-                color = Color.Gray,
-                fontSize = 13.sp
-            )
-        }
-
-        Text(
-            text = "Đơn giá: ${"%,.0f".format(item.price)}",
-            color = Color.Gray,
-            fontSize = 13.sp
-        )
-    }
-}
