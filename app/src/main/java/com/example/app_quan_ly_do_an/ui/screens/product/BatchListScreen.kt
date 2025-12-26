@@ -1,6 +1,5 @@
 package com.example.app_quan_ly_do_an.ui.screens.product
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,190 +14,215 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.app_quan_ly_do_an.data.model.Batch
-import com.example.app_quan_ly_do_an.data.mock.MockProductData
+import coil.compose.AsyncImage
+import com.example.app_quan_ly_do_an.data.model.InventoryLot
 import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
-
+import com.example.app_quan_ly_do_an.ui.viewmodel.product.BatchListViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BatchListScreen(
-    productId: String?, // TODO: sẽ dùng để load data từ database
+    productId: String?,
     navController: NavController,
+    viewModel: BatchListViewModel = viewModel(),
     onBack: () -> Unit = { navController.popBackStack() }
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
 
-    // Snackbar state
-    val snackbarHostState = remember { SnackbarHostState() }
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(productId) {
+        if (productId != null) {
+            viewModel.loadBatches(productId)
+        }
+    }
 
     // Filter batches based on search query
-    val filteredBatches = remember(searchQuery) {
+    val filteredBatches = remember(searchQuery, uiState.batches) {
         if (searchQuery.isEmpty()) {
-            MockProductData.sampleBatches
+            uiState.batches
         } else {
-            MockProductData.sampleBatches.filter { batch ->
-                batch.batchCode.contains(searchQuery, ignoreCase = true)
+            uiState.batches.filter { lot ->
+                lot.lotCode.contains(searchQuery, ignoreCase = true)
             }
         }
     }
 
+    fun formatDate(date: Date?): String {
+        return if (date == null) "..." else
+            SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)
+    }
+
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = Color(0xFFF5F5F5),
         contentWindowInsets = WindowInsets(0)
     ) { paddingValues ->
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color(0xFFF5F5F5))
-        ) {
-
-            //-----------------------------------------
-            // HEADER (Surface bo góc)
-            //-----------------------------------------
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color.White,
-                shadowElevation = 2.dp,
-                shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp)
+        if (uiState.isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFF0E8A38))
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .background(Color(0xFFF5F5F5))
             ) {
-                Column {
-
-                    // --- Row 1: back + title + actions ---
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (isSearching) {
-                            // Search TextField
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(50.dp),
-                                placeholder = { Text("Tìm mã lô hàng...") },
-                                singleLine = true,
-                                trailingIcon = {
-                                    IconButton(onClick = {
-                                        searchQuery = ""
-                                        isSearching = false
-                                    }) {
-                                        Icon(Icons.Default.Close, contentDescription = "Close search")
+                // HEADER
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Color.White,
+                    shadowElevation = 2.dp,
+                    shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (isSearching) {
+                                OutlinedTextField(
+                                    value = searchQuery,
+                                    onValueChange = { searchQuery = it },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(50.dp),
+                                    placeholder = { Text("Tìm mã lô hàng...") },
+                                    singleLine = true,
+                                    trailingIcon = {
+                                        IconButton(onClick = {
+                                            searchQuery = ""
+                                            isSearching = false
+                                        }) {
+                                            Icon(Icons.Default.Close, contentDescription = "Close search")
+                                        }
+                                    },
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = Color(0xFF0E8A38),
+                                        focusedLabelColor = Color(0xFF0E8A38),
+                                        cursorColor = Color(0xFF0E8A38)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                            } else {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(onClick = onBack) {
+                                        Icon(Icons.Default.ArrowBack, contentDescription = null)
                                     }
-                                },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF0E8A38),
-                                    focusedLabelColor = Color(0xFF0E8A38),
-                                    cursorColor = Color(0xFF0E8A38)
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                        } else {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(onClick = onBack) {
-                                    Icon(Icons.Default.ArrowBack, contentDescription = null)
+                                    Text(
+                                        "Danh sách lô hàng",
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
+
+                                Row {
+                                    IconButton(onClick = { isSearching = true }) {
+                                        Icon(Icons.Default.Search, null)
+                                    }
+                                }
+                            }
+                        }
+
+                        // Product info
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Ảnh sản phẩm dùng Coil
+                            AsyncImage(
+                                model = uiState.product?.productImage?.ifEmpty { null },
+                                contentDescription = uiState.product?.productName,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFFEEEEEE)),
+                                contentScale = ContentScale.Crop,
+                                error = androidx.compose.ui.res.painterResource(id = android.R.drawable.ic_menu_gallery),
+                                placeholder = androidx.compose.ui.res.painterResource(id = android.R.drawable.ic_menu_gallery)
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column {
                                 Text(
-                                    "Danh sách lô hàng",
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold
+                                    uiState.product?.productName ?: "...",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    "Mã hàng: ${uiState.product?.productCode ?: "..."}",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray
                                 )
                             }
-
-                            Row {
-                                IconButton(onClick = { isSearching = true }) {
-                                    Icon(Icons.Default.Search, null)
-                                }
-                            }
                         }
-                    }
 
-                    // --- Row 2: product info ---
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Placeholder image
-                        Box(
+                        // Total
+                        Row(
                             modifier = Modifier
-                                .size(48.dp)
-                                .background(Color(0xFFECECEC), RoundedCornerShape(8.dp))
-                        )
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column {
-                            Text("Diet Coke", fontSize = 18.sp, fontWeight = FontWeight.Medium)
-                            Text("Mã hàng: SP000001", fontSize = 12.sp, color = Color.Gray)
-                        }
-                    }
-
-                    // --- Row 3: total ---
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text("Tổng tồn", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                            Text("${filteredBatches.size} lô hàng", fontSize = 12.sp, color = Color.Gray)
-                        }
-                        Text(
-                            "${filteredBatches.sumOf { it.quantity }}",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            //-----------------------------------------
-            // LIST OF BATCHES
-            //-----------------------------------------
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 100.dp)
-            ) {
-                items(filteredBatches) { batch ->
-                    BatchItem(
-                        batch = batch,
-                        onClick = {
-                            navController.navigate(
-                                NavigationItem.BatchDetail.createRoute(batch.batchCode)
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("Tổng tồn", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                                Text("${filteredBatches.size} lô hàng", fontSize = 12.sp, color = Color.Gray)
+                            }
+                            Text(
+                                "${filteredBatches.sumOf { it.currentQuantity }}",
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
-                    )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // LIST OF BATCHES
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 100.dp)
+                ) {
+                    items(filteredBatches) { lot ->
+                        BatchItem(
+                            lot = lot,
+                            dateString = formatDate(lot.importDate),
+                            onClick = {
+                                navController.navigate(
+                                    NavigationItem.BatchDetail.createRoute(lot.lotId)
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-
 @Composable
-fun BatchItem(batch: Batch, onClick: () -> Unit) {
+fun BatchItem(lot: InventoryLot, dateString: String, onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -209,24 +233,11 @@ fun BatchItem(batch: Batch, onClick: () -> Unit) {
         color = Color.White
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(batch.batchCode, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(lot.lotCode, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(4.dp))
-            Text("Ngày nhập: ${batch.importDate}", fontSize = 13.sp, color = Color.Gray)
+            Text("Ngày nhập: $dateString", fontSize = 13.sp, color = Color.Gray)
             Spacer(Modifier.height(4.dp))
-            Text("Tồn: ${batch.quantity}", fontSize = 13.sp)
+            Text("Tồn: ${lot.currentQuantity}", fontSize = 13.sp)
         }
     }
 }
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun BatchListScreenPreview() {
-    val navController = rememberNavController()
-
-    BatchListScreen(
-        productId = "SP000001",
-        navController = navController
-    )
-}
-
-

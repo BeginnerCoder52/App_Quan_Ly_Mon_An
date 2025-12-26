@@ -1,5 +1,5 @@
 package com.example.app_quan_ly_do_an.ui.screens.stock.tabs
-import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,38 +11,41 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.example.app_quan_ly_do_an.data.model.ExportBill
+import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
+import com.example.app_quan_ly_do_an.ui.viewmodel.export_bill.ExportBillListViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-
-data class ExportBill(
-    val id: String,
-    val code: String, // Ví dụ: EBI0001
-    val date: String, // Ví dụ: 22/11/2025
-    val totalAmount: Double
-)
-val primaryColor = Color(0xFF006633)
-val backgroundColor = Color(0xFFF5F5F5)
 @Composable
-fun ExportStockTab(navController: NavController) {
+fun ExportStockTab(
+    navController: NavController,
+    viewModel: ExportBillListViewModel = viewModel()
+) {
     // Màu chủ đạo
+    val primaryColor = Color(0xFF006633)
+    val backgroundColor = Color(0xFFF5F5F5)
 
+    // Lắng nghe dữ liệu thật từ ViewModel
+    val realBills by viewModel.bills.collectAsState()
 
-    // Dữ liệu giả lập
-    val sampleBills = listOf(
-        ExportBill("1", "EBI0001", "22/11/2025", 1000000.0),
-        ExportBill("2", "EBI0002", "22/11/2025", 1000000.0),
-        ExportBill("3", "EBI0003", "22/11/2025", 1000000.0),
-        ExportBill("4", "EBI0004", "21/11/2025", 500000.0),
-        ExportBill("5", "EBI0005", "20/11/2025", 2500000.0),
-    )
+    // Hàm format ngày tháng (Date -> String)
+    fun formatDate(date: Date?): String {
+        if (date == null) return "..."
+        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        return sdf.format(date)
+    }
 
     Scaffold(
         containerColor = backgroundColor,
@@ -89,7 +92,7 @@ fun ExportStockTab(navController: NavController) {
                                 Icon(Icons.Default.Search, contentDescription = "Search")
                             }
                             IconButton(onClick = {}) {
-                                Icon(Icons.Default.SwapVert, contentDescription = "Sort") // Icon sort giống ảnh
+                                Icon(Icons.Default.SwapVert, contentDescription = "Sort")
                             }
                             IconButton(onClick = {}) {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More")
@@ -146,7 +149,7 @@ fun ExportStockTab(navController: NavController) {
                             color = Color.Black
                         )
                         Text(
-                            text = "${sampleBills.size}",
+                            text = "${realBills.size}",
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                             color = Color.Black
@@ -169,10 +172,15 @@ fun ExportStockTab(navController: NavController) {
                         .fillMaxSize()
                         .padding(top = 8.dp)
                 ) {
-                    items(sampleBills) { bill ->
-                        ExportBillItem(bill = bill, onClick = {
-                            navController.navigate(NavigationItem.ExportBillDetail.createRoute(bill.id))
-                        })
+                    items(realBills) { bill ->
+                        ExportBillItem(
+                            bill = bill,
+                            dateString = formatDate(bill.date),
+                            primaryColor = primaryColor,
+                            onClick = {
+                                navController.navigate(NavigationItem.ExportBillDetail.createRoute(bill.exportBillId))
+                            }
+                        )
                     }
                     // Spacer dưới cùng để không bị che bởi FAB
                     item { Spacer(modifier = Modifier.height(80.dp)) }
@@ -183,13 +191,16 @@ fun ExportStockTab(navController: NavController) {
 }
 
 @Composable
-fun ExportBillItem(bill: ExportBill, onClick: () -> Unit) {
+fun ExportBillItem(
+    bill: ExportBill,
+    dateString: String,
+    primaryColor: Color,
+    onClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable {
-                onClick();
-            }
+            .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(
@@ -200,14 +211,14 @@ fun ExportBillItem(bill: ExportBill, onClick: () -> Unit) {
             // Cột bên trái: Mã + Ngày
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = bill.code,
+                    text = bill.exportBillCode,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = Color.Black
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Ngày xuất: ${bill.date}",
+                    text = "Ngày xuất: $dateString",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )
@@ -224,6 +235,4 @@ fun ExportBillItem(bill: ExportBill, onClick: () -> Unit) {
         Spacer(modifier = Modifier.height(12.dp))
         Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
     }
-
 }
-

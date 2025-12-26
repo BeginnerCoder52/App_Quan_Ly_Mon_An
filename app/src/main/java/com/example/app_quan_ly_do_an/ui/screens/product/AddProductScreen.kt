@@ -15,30 +15,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.app_quan_ly_do_an.data.model.Product
+import com.example.app_quan_ly_do_an.ui.viewmodel.product.AddProductViewModel
 import kotlinx.coroutines.launch
-import com.example.app_quan_ly_do_an.data.mock.MockProductData
-import com.example.app_quan_ly_do_an.ui.theme.App_Quan_Ly_Do_AnTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddProductScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: AddProductViewModel = viewModel()
 ) {
     // State for all input fields
     var productCode by remember { mutableStateOf("") }
-    var barcode by remember { mutableStateOf("") }
     var productName by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("") }
+    var categoryName by remember { mutableStateOf("") }
     var unit by remember { mutableStateOf("") }
-    var price by remember { mutableStateOf("") }
+    var sellPrice by remember { mutableStateOf("") }
     var minStock by remember { mutableStateOf("") }
+    var productImage by remember { mutableStateOf("") }
 
-    // State for category dropdown
+    // UI state
+    var showImageUrlInput by remember { mutableStateOf(false) }
     var expandedCategory by remember { mutableStateOf(false) }
-    val categories = MockProductData.getAllCategories()
+    
+    val categories by viewModel.categories.collectAsState()
+    val isSaving by viewModel.isSaving.collectAsState()
 
     // Snackbar state
     val snackbarHostState = remember { SnackbarHostState() }
@@ -80,43 +84,53 @@ fun AddProductScreen(
                         fontWeight = FontWeight.SemiBold
                     )
 
-                    TextButton(onClick = {
-                        // Validate required fields
-                        if (productName.isEmpty()) {
-                            scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    message = "Vui lòng nhập tên hàng",
-                                    duration = SnackbarDuration.Short
-                                )
-                            }
-                            return@TextButton
-                        }
-                        if (category.isEmpty()) {
-                            scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    message = "Vui lòng chọn nhóm hàng",
-                                    duration = SnackbarDuration.Short
-                                )
-                            }
-                            return@TextButton
-                        }
-
-                        // TODO: Save to database
-                        scope.launch {
-                            snackbarHostState.showSnackbar(
-                                message = "✓ Thêm hàng hóa thành công",
-                                duration = SnackbarDuration.Short
-                            )
-                            // Delay to show snackbar before going back
-                            kotlinx.coroutines.delay(500)
-                            onBack()
-                        }
-                    }) {
-                        Text(
-                            "Lưu",
+                    if (isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
                             color = Color(0xFF0E8A38),
-                            fontWeight = FontWeight.SemiBold
+                            strokeWidth = 2.dp
                         )
+                    } else {
+                        TextButton(onClick = {
+                            if (productName.isEmpty()) {
+                                scope.launch { snackbarHostState.showSnackbar("Vui lòng nhập tên hàng") }
+                                return@TextButton
+                            }
+                            if (categoryName.isEmpty()) {
+                                scope.launch { snackbarHostState.showSnackbar("Vui lòng chọn nhóm hàng") }
+                                return@TextButton
+                            }
+
+                            val newProduct = Product(
+                                productCode = productCode,
+                                productName = productName,
+                                productCategory = categoryName,
+                                unit = unit,
+                                sellPrice = sellPrice.toDoubleOrNull() ?: 0.0,
+                                minStock = minStock.toIntOrNull() ?: 0,
+                                productImage = productImage
+                            )
+
+                            viewModel.saveProduct(
+                                product = newProduct,
+                                onSuccess = {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("✓ Thêm hàng hóa thành công")
+                                        kotlinx.coroutines.delay(500)
+                                        onBack()
+                                    }
+                                },
+                                onFailure = { error ->
+                                    scope.launch { snackbarHostState.showSnackbar("Lỗi: $error") }
+                                }
+                            )
+                        }) {
+                            Text(
+                                "Lưu",
+                                color = Color(0xFF0E8A38),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             }
@@ -143,17 +157,32 @@ fun AddProductScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
 
-                            Box(
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .background(Color(0xFF0E8A38), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Default.CameraAlt,
-                                    contentDescription = null,
-                                    tint = Color.White
-                                )
+                            // Image Section
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .background(Color(0xFF0E8A38), CircleShape)
+                                        .clickable { showImageUrlInput = !showImageUrlInput },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.CameraAlt,
+                                        contentDescription = null,
+                                        tint = Color.White
+                                    )
+                                }
+                                if (showImageUrlInput) {
+                                    Spacer(Modifier.width(12.dp))
+                                    OutlinedTextField(
+                                        value = productImage,
+                                        onValueChange = { productImage = it },
+                                        modifier = Modifier.weight(1f),
+                                        label = { Text("Link ảnh sản phẩm") },
+                                        shape = RoundedCornerShape(12.dp),
+                                        singleLine = true
+                                    )
+                                }
                             }
 
                             ProductTextField(
@@ -164,26 +193,19 @@ fun AddProductScreen(
                             )
 
                             ProductTextField(
-                                label = "Mã vạch",
-                                value = barcode,
-                                onValueChange = { barcode = it },
-                                trailingIcon = Icons.Default.QrCodeScanner
-                            )
-
-                            ProductTextField(
                                 label = "Tên hàng",
                                 value = productName,
                                 onValueChange = { productName = it },
                                 required = true
                             )
 
-                            // Category Dropdown (Real)
+                            // Category Dropdown
                             ExposedDropdownMenuBox(
                                 expanded = expandedCategory,
                                 onExpandedChange = { expandedCategory = !expandedCategory }
                             ) {
                                 OutlinedTextField(
-                                    value = category,
+                                    value = categoryName,
                                     onValueChange = {},
                                     readOnly = true,
                                     modifier = Modifier
@@ -208,11 +230,11 @@ fun AddProductScreen(
                                     expanded = expandedCategory,
                                     onDismissRequest = { expandedCategory = false }
                                 ) {
-                                    categories.forEach { categoryItem ->
+                                    categories.forEach { cat ->
                                         DropdownMenuItem(
-                                            text = { Text(categoryItem) },
+                                            text = { Text(cat.categoryName) },
                                             onClick = {
-                                                category = categoryItem
+                                                categoryName = cat.categoryName
                                                 expandedCategory = false
                                             }
                                         )
@@ -227,8 +249,8 @@ fun AddProductScreen(
                             )
                             ProductTextField(
                                 label = "Giá bán",
-                                value = price,
-                                onValueChange = { price = it }
+                                value = sellPrice,
+                                onValueChange = { sellPrice = it }
                             )
                             ProductTextField(
                                 label = "Mức tồn kho tối thiểu",
@@ -243,7 +265,6 @@ fun AddProductScreen(
     }
 }
 
-// ---------- TEXT FIELD ----------
 @Composable
 fun ProductTextField(
     label: String,
@@ -274,49 +295,4 @@ fun ProductTextField(
             cursorColor = Color(0xFF0E8A38)
         )
     )
-}
-
-// ---------- DROPDOWN GIẢ (CLICK ĐƯỢC) ----------
-@Composable
-fun ProductDropdownField(
-    label: String,
-    value: String,
-    required: Boolean = false,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-    ) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {},
-            modifier = Modifier.fillMaxWidth(),
-            readOnly = true,
-            label = {
-                Row {
-                    Text(label)
-                    if (required) Text(" *", color = Color.Red)
-                }
-            },
-            trailingIcon = {
-                Icon(Icons.Default.KeyboardArrowRight, contentDescription = null)
-            },
-            shape = RoundedCornerShape(14.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF0E8A38),
-                focusedLabelColor = Color(0xFF0E8A38)
-            )
-        )
-    }
-}
-
-// ---------- PREVIEW ----------
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun AddProductScreenPreview() {
-    App_Quan_Ly_Do_AnTheme {
-        AddProductScreen(onBack = {})
-    }
 }

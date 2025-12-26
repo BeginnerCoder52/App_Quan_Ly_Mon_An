@@ -1,15 +1,12 @@
 package com.example.app_quan_ly_do_an.ui.navigation
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-
 import com.example.app_quan_ly_do_an.ui.screens.home.HomeScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.StockScreen
@@ -20,16 +17,16 @@ import com.example.app_quan_ly_do_an.ui.screens.profile.ProfileScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.AddImportBillScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.ImportBillDetailScreen
 //HIEN'S CODE END
+import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.EditImportBillScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductDetailScreen
-
 import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.ExportBillDetailScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.AddExportBillScreen
+import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.EditExportBillScreen
 
 import com.example.app_quan_ly_do_an.ui.screens.product.BatchListScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.AddProductScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.EditProductScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.EditBatchScreen
-
 
 /**
  * Defines the navigation graph for the application.
@@ -43,15 +40,14 @@ import com.example.app_quan_ly_do_an.ui.screens.product.EditBatchScreen
 fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues) {
     NavHost(
         navController = navController,
-        startDestination = NavigationItem.Home.route,
-        modifier = Modifier.padding(innerPadding)
+        startDestination = NavigationItem.Home.route
     ) {
         composable(NavigationItem.Home.route) {
-            HomeScreen()
+            HomeScreen(navController = navController)
         }
 
         composable(NavigationItem.Product.route) {
-            ProductScreen(navController = navController)
+            ProductScreen(navController = navController, innerPadding = innerPadding)
         }
         //Lưu biến để quay về đúng tab trước
         composable(
@@ -86,8 +82,8 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
         composable(NavigationItem.ImportBillDetail.route) { backStackEntry ->
             val billId = backStackEntry.arguments?.getString("billId")
             ImportBillDetailScreen(
+                navController = navController,
                 billId = billId,
-                onBack = { navController.popBackStack() }
             )
         }
         //HIEN'S CODE END
@@ -99,7 +95,6 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
                 onBack = { navController.popBackStack() }
             )
         }
-
         composable(NavigationItem.BatchList.route) { backStackEntry ->
             val productId = backStackEntry.arguments?.getString("productId")
             BatchListScreen(
@@ -128,8 +123,7 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             val productId = backStackEntry.arguments?.getString("productId")
             EditProductScreen(
                 productId = productId,
-                onBack = { navController.popBackStack() },
-                onSave = { navController.popBackStack() }
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -138,7 +132,15 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             EditBatchScreen(
                 batchId = batchId,
                 onBack = { navController.popBackStack() },
-                onSave = { navController.popBackStack() }
+            )
+        }
+        composable(NavigationItem.EditImportBill.route) { backStackEntry ->
+            val billId = backStackEntry.arguments?.getString("billId")
+            EditImportBillScreen(
+                navController = navController,
+                billId = billId,
+                onBack = { navController.popBackStack() },
+                bottomPadding = innerPadding.calculateBottomPadding() // Quan trọng để tránh BottomBar
             )
         }
 
@@ -157,5 +159,14 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             )
         }
 
+        composable(NavigationItem.EditExportBill.route) { backStackEntry ->
+            val billId = backStackEntry.arguments?.getString("billId")
+            EditExportBillScreen(
+                navController = navController,
+                billId = billId,
+                onBack = { navController.popBackStack() },
+                bottomPadding = innerPadding.calculateBottomPadding()
+            )
+        }
     }
 }

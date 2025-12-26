@@ -1,18 +1,14 @@
 package com.example.app_quan_ly_do_an.ui.screens.product
 
-
-import  androidx.compose.runtime.Composable
-import  androidx.compose.ui.tooling.preview.Preview
-
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.material3.Text
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
@@ -20,7 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
-
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
@@ -35,11 +30,12 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
-
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-
 import com.example.app_quan_ly_do_an.data.mock.MockProductData
 import com.example.app_quan_ly_do_an.ui.components.ProductItemPlaceHolder
 import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
@@ -47,6 +43,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import com.example.app_quan_ly_do_an.ui.viewmodel.product.ProductViewModel
+import com.example.app_quan_ly_do_an.data.model.Product
+
+// Enum for sort options
+enum class SortOption {
+    None,
+    TimeNewest,
+    TimeOldest,
+    PriceAscending,
+    PriceDescending,
+    NameAZ,
+    NameZA,
+    StockAscending,
+    StockDescending
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -212,7 +225,14 @@ fun SearchProductScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductScreen(navController: NavController) {
+fun ProductScreen(
+    navController: NavController,
+    innerPadding: PaddingValues = PaddingValues(0.dp),
+    viewModel: ProductViewModel = viewModel()
+) {
+    val productList by viewModel.products.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
     var showSortBottomSheet by remember { mutableStateOf(false) }
     var showSearchScreen by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -223,17 +243,15 @@ fun ProductScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
 
     // Sorted list based on selected sort option
-    val sortedFoodItems = remember(sortOption) {
+    val sortedFoodItems = remember(sortOption, productList) {
         when (sortOption) {
-            SortOption.TimeNewest -> MockProductData.sampleFoodItems.sortedByDescending { it.expiryDate }
-            SortOption.TimeOldest -> MockProductData.sampleFoodItems.sortedBy { it.expiryDate }
-            SortOption.PriceAscending -> MockProductData.sampleFoodItems.sortedBy { it.price }
-            SortOption.PriceDescending -> MockProductData.sampleFoodItems.sortedByDescending { it.price }
-            SortOption.NameAZ -> MockProductData.sampleFoodItems.sortedBy { it.name }
-            SortOption.NameZA -> MockProductData.sampleFoodItems.sortedByDescending { it.name }
-            SortOption.StockAscending -> MockProductData.sampleFoodItems.sortedBy { it.quantity }
-            SortOption.StockDescending -> MockProductData.sampleFoodItems.sortedByDescending { it.quantity }
-            else -> MockProductData.sampleFoodItems
+            SortOption.PriceAscending -> productList.sortedBy { it.sellPrice }
+            SortOption.PriceDescending -> productList.sortedByDescending { it.sellPrice }
+            SortOption.NameAZ -> productList.sortedBy { it.productName }
+            SortOption.NameZA -> productList.sortedByDescending { it.productName }
+            SortOption.StockAscending -> productList.sortedBy { it.totalStock }
+            SortOption.StockDescending -> productList.sortedByDescending { it.totalStock }
+            else -> productList
         }
     }
 
@@ -250,6 +268,7 @@ fun ProductScreen(navController: NavController) {
     }
 
     Scaffold(
+        modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
@@ -265,11 +284,11 @@ fun ProductScreen(navController: NavController) {
         },
         contentWindowInsets = WindowInsets(0),
         containerColor = Color(0xFFF5F5F5)
-    ) { innerPadding ->
+    ) { scaffoldPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(scaffoldPadding)
                 .background(Color(0xFFF5F5F5))
         ) {
             Surface(
@@ -313,9 +332,9 @@ fun ProductScreen(navController: NavController) {
                         {
                             Column{
                                 Text("Tổng tồn", fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
-                                Text("${MockProductData.getTotalProducts()} hàng hóa", color = Color.Gray, fontSize = 13.sp)
+                                Text("${productList.size} hàng hóa", color = Color.Gray, fontSize = 13.sp)
                             }
-                            Text("${MockProductData.getTotalStock()}", fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
+                            Text("${viewModel.getTotalStock()}", fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
                         }
                     }
 
@@ -331,29 +350,37 @@ fun ProductScreen(navController: NavController) {
                 shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
                 shadowElevation = 1.dp
             ){
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(vertical = 8.dp)
-                )
-                {
-                    items(sortedFoodItems) { item ->
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    navController.navigate(
-                                        NavigationItem.ProductDetail.createRoute(item.id)
-                                    )
-                                }
-                        ) {
-                            ProductItemPlaceHolder(item)
-                            HorizontalDivider(color = Color(0xFFE0E0E0), thickness = 1.dp)
-                        }
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color(0xFF0E8A38))
                     }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(vertical = 8.dp)
+                    )
+                    {
+                        items(sortedFoodItems) { item ->
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        navController.navigate(
+                                            NavigationItem.ProductDetail.createRoute(item.productId)
+                                        )
+                                    }
+                            ) {
+                                ProductItem(product = item, onClick = {
+                                    navController.navigate(NavigationItem.ProductDetail.createRoute(item.productId))
+                                })
+                                HorizontalDivider(color = Color(0xFFE0E0E0), thickness = 1.dp)
+                            }
+                        }
 
-                    item{ Spacer(modifier = Modifier.height(100.dp))}
+                        item{ Spacer(modifier = Modifier.height(100.dp))}
 
+                    }
                 }
             }
         }
@@ -471,19 +498,6 @@ fun ProductScreen(navController: NavController) {
 
 }
 
-// Enum for sort options
-enum class SortOption {
-    None,
-    TimeNewest,
-    TimeOldest,
-    PriceAscending,
-    PriceDescending,
-    NameAZ,
-    NameZA,
-    StockAscending,
-    StockDescending
-}
-
 @Composable
 fun SortOptionItem(
     text: String,
@@ -521,7 +535,43 @@ fun SortOptionItem(
         }
     }
 }
-
+@Composable
+fun ProductItem(product: Product, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Ảnh sản phẩm dùng Coil
+        AsyncImage(
+            model = product.productImage.ifEmpty { null },
+            contentDescription = product.productName,
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFFEEEEEE)),
+            contentScale = ContentScale.Crop,
+            error = androidx.compose.ui.res.painterResource(id = android.R.drawable.ic_menu_gallery),
+            placeholder = androidx.compose.ui.res.painterResource(id = android.R.drawable.ic_menu_gallery)
+        )
+        
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = product.productName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = "Mã: ${product.productCode}", color = Color.Gray, fontSize = 13.sp)
+            Text(text = "Tồn kho: ${product.totalStock} ${product.unit}", color = Color(0xFF0E8A38), fontSize = 13.sp)
+        }
+        Text(
+            text = "${"%,.0f".format(product.sellPrice)} đ", 
+            fontWeight = FontWeight.Bold, 
+            fontSize = 15.sp,
+            color = Color.Black
+        )
+    }
+}
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
