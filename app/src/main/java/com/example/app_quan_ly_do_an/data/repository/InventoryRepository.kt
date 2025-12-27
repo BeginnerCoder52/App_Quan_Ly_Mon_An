@@ -54,7 +54,12 @@ class InventoryRepository {
                     val dRef = importBillDetailRef.document()
                     transaction.set(dRef, pair.first.copy(importBillDetailId = dRef.id, importBillId = bRef.id, importBillDetailCode = "IBD${i + 1}"))
                     val lRef = lotRef.document()
-                    transaction.set(lRef, pair.second.copy(lotId = lRef.id, importDate = importBill.date ?: Date(), lotCode = "LOT${System.currentTimeMillis() % 100000}_$i"))
+                    transaction.set(lRef, pair.second.copy(
+                        lotId = lRef.id, 
+                        importBillId = bRef.id,
+                        importDate = importBill.date ?: Date(), 
+                        lotCode = "LOT${System.currentTimeMillis() % 100000}_$i"
+                    ))
                 }
                 productUpdates.forEach { (ref, stock, add) -> transaction.update(ref, "totalStock", stock + add) }
             }.await()
@@ -68,40 +73,70 @@ class InventoryRepository {
         oldDetails: List<ImportBillDetail>
     ): Boolean {
         return try {
+            val oldLots = lotRef.whereEqualTo("importBillId", updatedBill.importBillId).get().await().toObjects(InventoryLot::class.java)
+
             db.runTransaction { transaction ->
-                oldDetails.forEach { oldDetail ->
-                    val pRef = productRef.document(oldDetail.productId)
-                    val currentStock = transaction.get(pRef).getLong("totalStock") ?: 0L
-                    transaction.update(pRef, "totalStock", currentStock - oldDetail.quantity)
+                val productIds = (oldDetails.map { it.productId } + newItems.map { it.first.productId }).distinct()
+                val productSnapshots = productIds.associateWith { id ->
+                    transaction.get(productRef.document(id))
                 }
-                val bRef = importBillRef.document(updatedBill.importBillId)
-                transaction.set(bRef, updatedBill)
-                oldDetails.forEach { 
+
+                val stockChanges = mutableMapOf<String, Long>()
+                oldDetails.forEach { old ->
+                    stockChanges[old.productId] = (stockChanges[old.productId] ?: 0L) - old.quantity
+                }
+
+                oldDetails.forEach {
                     transaction.delete(importBillDetailRef.document(it.importBillDetailId))
                 }
+                oldLots.forEach { lot ->
+                    transaction.delete(lotRef.document(lot.lotId))
+                }
+
+                val bRef = importBillRef.document(updatedBill.importBillId)
+                transaction.set(bRef, updatedBill)
+
                 newItems.forEachIndexed { i, pair ->
                     val detail = pair.first
                     val lot = pair.second
+
                     val dRef = importBillDetailRef.document()
-                    transaction.set(dRef, detail.copy(importBillDetailId = dRef.id, importBillId = updatedBill.importBillId, importBillDetailCode = "IBD${i + 1}"))
+                    transaction.set(dRef, detail.copy(
+                        importBillDetailId = dRef.id,
+                        importBillId = updatedBill.importBillId,
+                        importBillDetailCode = "IBD${i + 1}"
+                    ))
+
                     val lRef = lotRef.document()
-                    transaction.set(lRef, lot.copy(lotId = lRef.id, importDate = updatedBill.date, lotCode = "LOT${System.currentTimeMillis() % 100000}_$i"))
-                    val pRef = productRef.document(detail.productId)
-                    val currentStock = transaction.get(pRef).getLong("totalStock") ?: 0L
-                    transaction.update(pRef, "totalStock", currentStock + detail.quantity)
+                    transaction.set(lRef, lot.copy(
+                        lotId = lRef.id,
+                        importBillId = updatedBill.importBillId, 
+                        importDate = updatedBill.date,
+                        lotCode = "LOT${System.currentTimeMillis() % 100000}_$i"
+                    ))
+
+                    stockChanges[detail.productId] = (stockChanges[detail.productId] ?: 0L) + detail.quantity
+                }
+
+                stockChanges.forEach { (productId, change) ->
+                    val snapshot = productSnapshots[productId]
+                    val currentTotalStock = snapshot?.getLong("totalStock") ?: 0L
+                    transaction.update(productRef.document(productId), "totalStock", currentTotalStock + change)
                 }
             }.await()
             true
-        } catch (e: Exception) { e.printStackTrace(); false }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
     }
 
-    // HÀM XÓA PHIẾU NHẬP (Transaction)
     suspend fun deleteImportBillTransaction(billId: String): Boolean {
         return try {
             val details = getImportBillDetails(billId)
+            val lots = lotRef.whereEqualTo("importBillId", billId).get().await().toObjects(InventoryLot::class.java)
+            
             db.runTransaction { transaction ->
-                // 1. GIAI ĐOẠN ĐỌC (READ PHASE)
-                // Gom nhóm theo productId để tránh đọc 1 sản phẩm nhiều lần
                 val updates = details.groupBy { it.productId }.map { (productId, prodDetails) ->
                     val pRef = productRef.document(productId)
                     val currentStock = transaction.get(pRef).getLong("totalStock") ?: 0L
@@ -109,12 +144,14 @@ class InventoryRepository {
                     pRef to (currentStock - totalQtyToReduce)
                 }
 
-                // 2. GIAI ĐOẠN GHI (WRITE PHASE)
                 updates.forEach { (ref, newStock) ->
                     transaction.update(ref, "totalStock", newStock)
                 }
                 details.forEach {
                     transaction.delete(importBillDetailRef.document(it.importBillDetailId))
+                }
+                lots.forEach {
+                    transaction.delete(lotRef.document(it.lotId))
                 }
                 transaction.delete(importBillRef.document(billId))
             }.await()
@@ -201,30 +238,140 @@ class InventoryRepository {
         } catch (e: Exception) { e.printStackTrace(); false }
     }
 
+    suspend fun updateExportBillTransaction(
+        updatedBill: ExportBill,
+        newDetails: List<ExportBillDetail>,
+        oldDetails: List<ExportBillDetail>
+    ): Boolean {
+        return try {
+            val productIds = (oldDetails.map { it.productId } + newDetails.map { it.productId }).distinct()
+            val allLotsMap = productIds.associateWith { pid ->
+                lotRef.whereEqualTo("productId", pid).get().await().toObjects(InventoryLot::class.java)
+                    .sortedWith(compareBy<InventoryLot> { it.expiryDate }.thenBy { it.importDate })
+            }
+
+            db.runTransaction { transaction ->
+                val productSnapshots = productIds.associateWith { id ->
+                    transaction.get(productRef.document(id))
+                }
+
+                val lotRefsWithQtyMap = mutableMapOf<String, Long>()
+                allLotsMap.values.flatten().forEach { lot ->
+                    val qty = transaction.get(lotRef.document(lot.lotId)).getLong("currentQuantity") ?: 0L
+                    lotRefsWithQtyMap[lot.lotId] = qty
+                }
+
+                val stockChanges = mutableMapOf<String, Long>()
+                oldDetails.forEach { old ->
+                    stockChanges[old.productId] = (stockChanges[old.productId] ?: 0L) + old.quantity
+                    val targetLot = allLotsMap[old.productId]?.firstOrNull()
+                    if (targetLot != null) {
+                        val currentQtyInMap = lotRefsWithQtyMap[targetLot.lotId] ?: 0L
+                        val newQty = currentQtyInMap + old.quantity
+                        lotRefsWithQtyMap[targetLot.lotId] = newQty
+                        transaction.update(lotRef.document(targetLot.lotId), "currentQuantity", newQty)
+                    }
+                    transaction.delete(exportBillDetailRef.document(old.exportBillDetailId))
+                }
+
+                transaction.set(exportBillRef.document(updatedBill.exportBillId), updatedBill)
+
+                newDetails.forEachIndexed { i, detail ->
+                    val dRef = exportBillDetailRef.document()
+                    transaction.set(dRef, detail.copy(
+                        exportBillDetailId = dRef.id,
+                        exportBillId = updatedBill.exportBillId,
+                        exportBillDetailCode = "EBD${i + 1}"
+                    ))
+
+                    var rem = detail.quantity
+                    val productLots = allLotsMap[detail.productId] ?: emptyList()
+                    val snapshot = productSnapshots[detail.productId]
+                    val dbTotalStock = snapshot?.getLong("totalStock") ?: 0L
+                    val availableStock = dbTotalStock + (stockChanges[detail.productId] ?: 0L)
+                    
+                    if (availableStock < detail.quantity) {
+                         throw FirebaseFirestoreException("Hết hàng", FirebaseFirestoreException.Code.ABORTED)
+                    }
+
+                    for (lot in productLots) {
+                        if (rem <= 0) break
+                        val currentQty = lotRefsWithQtyMap[lot.lotId] ?: 0L
+                        if (currentQty <= 0) continue
+                        val take = minOf(currentQty.toInt(), rem)
+                        val newQty = currentQty - take
+                        transaction.update(lotRef.document(lot.lotId), "currentQuantity", newQty)
+                        lotRefsWithQtyMap[lot.lotId] = newQty
+                        rem -= take
+                    }
+                    stockChanges[detail.productId] = (stockChanges[detail.productId] ?: 0L) - detail.quantity
+                }
+
+                stockChanges.forEach { (productId, change) ->
+                    val snapshot = productSnapshots[productId]
+                    val currentTotalStock = snapshot?.getLong("totalStock") ?: 0L
+                    transaction.update(productRef.document(productId), "totalStock", currentTotalStock + change)
+                }
+            }.await()
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     fun getExportBillsFlow() = callbackFlow {
         val listener = exportBillRef.orderBy("date", Query.Direction.DESCENDING).addSnapshotListener { s, _ -> trySend(s?.toObjects(ExportBill::class.java) ?: emptyList()) }
         awaitClose { listener.remove() }
     }
-    // HÀM XÓA PHIẾU XUẤT (Transaction)
+    
     suspend fun deleteExportBillTransaction(billId: String): Boolean {
         return try {
             val details = getExportBillDetails(billId)
+            val productIds = details.map { it.productId }.distinct()
+            
+            // Lấy danh sách lô hàng bên ngoài transaction
+            val allLotsMap = productIds.associateWith { pid ->
+                lotRef.whereEqualTo("productId", pid).get().await().toObjects(InventoryLot::class.java)
+                    .sortedWith(compareBy<InventoryLot> { it.expiryDate }.thenBy { it.importDate })
+            }
+
             db.runTransaction { transaction ->
-                // 1. GIAI ĐOẠN ĐỌC (READ PHASE)
-                val updates = details.groupBy { it.productId }.map { (productId, prodDetails) ->
-                    val pRef = productRef.document(productId)
-                    val currentStock = transaction.get(pRef).getLong("totalStock") ?: 0L
-                    val totalQtyToAdd = prodDetails.sumOf { it.quantity }
-                    pRef to (currentStock + totalQtyToAdd)
+                // 1. READ PHASE
+                val productSnapshots = productIds.associateWith { id ->
+                    transaction.get(productRef.document(id))
+                }
+                
+                val lotRefsWithQtyMap = mutableMapOf<String, Long>()
+                allLotsMap.values.flatten().forEach { lot ->
+                    val qty = transaction.get(lotRef.document(lot.lotId)).getLong("currentQuantity") ?: 0L
+                    lotRefsWithQtyMap[lot.lotId] = qty
                 }
 
-                // 2. GIAI ĐOẠN GHI (WRITE PHASE)
-                updates.forEach { (ref, newStock) ->
-                    transaction.update(ref, "totalStock", newStock)
+                // 2. WRITE PHASE - Hoàn trả số lượng vào product và lot
+                val stockChanges = mutableMapOf<String, Long>()
+                details.forEach { detail ->
+                    // Cộng lại vào totalStock
+                    stockChanges[detail.productId] = (stockChanges[detail.productId] ?: 0L) + detail.quantity
+                    
+                    // Cộng lại vào một lô hàng (Ưu tiên lô hàng đầu tiên có hạn dùng gần nhất)
+                    val targetLot = allLotsMap[detail.productId]?.firstOrNull()
+                    if (targetLot != null) {
+                        val currentQty = lotRefsWithQtyMap[targetLot.lotId] ?: 0L
+                        val newQty = currentQty + detail.quantity
+                        transaction.update(lotRef.document(targetLot.lotId), "currentQuantity", newQty)
+                        lotRefsWithQtyMap[targetLot.lotId] = newQty
+                    }
+                    
+                    transaction.delete(exportBillDetailRef.document(detail.exportBillDetailId))
                 }
-                details.forEach {
-                    transaction.delete(exportBillDetailRef.document(it.exportBillDetailId))
+
+                stockChanges.forEach { (productId, change) ->
+                    val snapshot = productSnapshots[productId]
+                    val currentTotalStock = snapshot?.getLong("totalStock") ?: 0L
+                    transaction.update(productRef.document(productId), "totalStock", currentTotalStock + change)
                 }
+
                 transaction.delete(exportBillRef.document(billId))
             }.await()
             true
@@ -233,6 +380,7 @@ class InventoryRepository {
             false
         }
     }
+
     fun getInventoryLotsByProductIdFlow(id: String) = callbackFlow {
         val listener = lotRef.whereEqualTo("productId", id).orderBy("importDate", Query.Direction.DESCENDING).addSnapshotListener { s, _ -> trySend(s?.toObjects(InventoryLot::class.java) ?: emptyList()) }
         awaitClose { listener.remove() }
