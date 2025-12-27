@@ -29,6 +29,25 @@ class AddProductViewModel : ViewModel() {
         }
     }
 
+    // HIEN'S CODE BEGIN
+    // Hàm giả lập check thông tin từ Barcode
+    // Trả về Product mẫu nếu tìm thấy, null nếu không thấy
+    fun checkBarcodeInfo(code: String): Product? {
+        return if (code == "8934609602537") {
+            Product(
+                productCode = "HURA01",
+                productName = "Bánh Hura Swissroll (Dâu)",
+                productCategory = "Bánh kẹo",
+                unit = "Hộp",
+                sellPrice = 25000.0,
+                productImage = "https://cdn.hstatic.net/products/200000743311/hura_swissroll_360_gam_dau_842f240315094eaa935cb26f0ecaa7ba_master.png" // Demo link
+            )
+        } else {
+            null
+        }
+    }
+    // HIEN'S CODE END
+
     fun saveProduct(
         product: Product,
         onSuccess: () -> Unit,

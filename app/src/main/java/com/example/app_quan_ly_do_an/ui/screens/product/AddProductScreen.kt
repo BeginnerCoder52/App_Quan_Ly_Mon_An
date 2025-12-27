@@ -21,6 +21,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.app_quan_ly_do_an.data.model.Product
 import com.example.app_quan_ly_do_an.ui.viewmodel.product.AddProductViewModel
 import kotlinx.coroutines.launch
+// HIEN'S CODE BEGIN
+import android.Manifest
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.example.app_quan_ly_do_an.ui.components.BarcodeScanner
+// HIEN'S CODE END
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,11 +46,18 @@ fun AddProductScreen(
     var sellPrice by remember { mutableStateOf("") }
     var minStock by remember { mutableStateOf("") }
     var productImage by remember { mutableStateOf("") }
+    var barcode by remember { mutableStateOf("") } // Biến này lưu mã vạch
 
     // UI state
     var showImageUrlInput by remember { mutableStateOf(false) }
     var expandedCategory by remember { mutableStateOf(false) }
-    
+
+    //HIEN'S CODE BEGIN
+    var category by remember { mutableStateOf("") }
+    var price by remember { mutableStateOf("") }
+    var imageUrl by remember { mutableStateOf("") }
+    //HIEN'S CODE END
+
     val categories by viewModel.categories.collectAsState()
     val isSaving by viewModel.isSaving.collectAsState()
 
@@ -48,11 +65,59 @@ fun AddProductScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // HIEN'S CODE BEGIN
+    val context = LocalContext.current
+    var showCameraDialog by remember { mutableStateOf(false) }
+
+    // Launcher xin quyền Camera
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            showCameraDialog = true
+        } else {
+            Toast.makeText(context, "Cần quyền Camera để quét mã", Toast.LENGTH_SHORT).show()
+        }
+    }
+    // HIEN'S CODE END
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0),
         containerColor = Color(0xFFF5F5F5)
     ) { padding ->
+
+        // HIEN'S CODE BEGIN
+        // --- DIALOG CAMERA (Full Screen) ---
+        if (showCameraDialog) {
+            Dialog(
+                onDismissRequest = { showCameraDialog = false },
+                properties = DialogProperties(usePlatformDefaultWidth = false)
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    BarcodeScanner(onBarcodeDetected = { code ->
+                        // HIEN'S CODE BEGIN
+                        // LOGIC MỚI: Chỉ điền mã vạch, không làm gì khác
+                        barcode = code
+                        showCameraDialog = false
+
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Đã quét mã: $code")
+                        }
+                        // HIEN'S CODE END
+                    })
+
+                    // Nút đóng camera
+                    IconButton(
+                        onClick = { showCameraDialog = false },
+                        modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                    }
+                }
+            }
+        }
+        // HIEN'S CODE END
 
         Column(
             modifier = Modifier
@@ -183,6 +248,34 @@ fun AddProductScreen(
                                         singleLine = true
                                     )
                                 }
+
+                                // HIEN'S CODE BEGIN
+                                // Nút Quét Barcode LỚN
+                                Button(
+                                    onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0E8A38)),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Icon(Icons.Default.QrCodeScanner, contentDescription = null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Quét mã vạch (Hỗ trợ HURA)")
+                                }
+                                // HIEN'S CODE END
+
+                                ProductTextField(label = "Mã hàng (SKU)", value = productCode, onValueChange = { productCode = it })
+
+                                // HIEN'S CODE BEGIN
+                                // Ô Mã vạch có icon quét nhỏ bên phải
+                                ProductTextField(
+                                    label = "Mã vạch (Barcode)",
+                                    value = barcode,
+                                    onValueChange = { barcode = it },
+                                    trailingIcon = Icons.Default.QrCodeScanner, // Icon trang trí
+                                    // Khi bấm icon nhỏ cũng mở cam
+                                    onTrailingIconClick = { permissionLauncher.launch(Manifest.permission.CAMERA) }
+                                )
+                                // HIEN'S CODE END
                             }
 
                             ProductTextField(
@@ -265,13 +358,16 @@ fun AddProductScreen(
     }
 }
 
+// HIEN'S CODE BEGIN
+// Cập nhật hàm ProductTextField để hỗ trợ click vào icon đuôi (nếu cần)
 @Composable
 fun ProductTextField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
     required: Boolean = false,
-    trailingIcon: ImageVector? = null
+    trailingIcon: ImageVector? = null,
+    onTrailingIconClick: (() -> Unit)? = null // Tham số mới
 ) {
     OutlinedTextField(
         value = value,
@@ -285,7 +381,9 @@ fun ProductTextField(
         },
         trailingIcon = {
             trailingIcon?.let {
-                Icon(it, contentDescription = null)
+                IconButton(onClick = { onTrailingIconClick?.invoke() }) {
+                    Icon(it, contentDescription = null)
+                }
             }
         },
         shape = RoundedCornerShape(14.dp),
@@ -296,3 +394,4 @@ fun ProductTextField(
         )
     )
 }
+// HIEN'S CODE END

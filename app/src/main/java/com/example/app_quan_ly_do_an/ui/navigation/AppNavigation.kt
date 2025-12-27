@@ -16,6 +16,10 @@ import com.example.app_quan_ly_do_an.ui.screens.profile.ProfileScreen
 //HIEN'S CODE BEGIN
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.AddImportBillScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.ImportBillDetailScreen
+import com.example.app_quan_ly_do_an.ui.viewmodel.home.HomeViewModel
+// Thêm 2 import này để dùng được Modifier.padding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
 //HIEN'S CODE END
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.EditImportBillScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductDetailScreen
@@ -37,18 +41,32 @@ import com.example.app_quan_ly_do_an.ui.screens.product.EditBatchScreen
  * @param navController The navigation controller used to navigate between screens.
  */
 @Composable
-fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues) {
+fun AppNavigation(
+    navController: NavHostController,
+    innerPadding: PaddingValues,
+    // HIEN'S CODE BEGIN
+    homeViewModel: HomeViewModel // Thêm tham số này để khớp với MainActivity
+    // HIEN'S CODE END
+) {
     NavHost(
         navController = navController,
-        startDestination = NavigationItem.Home.route
+        startDestination = NavigationItem.Home.route,
+        // HIEN'S CODE BEGIN
+        // QUAN TRỌNG: Thêm dòng này để đẩy nội dung lên trên BottomBar
+        modifier = Modifier.padding(innerPadding)
+        // HIEN'S CODE END
     ) {
         composable(NavigationItem.Home.route) {
-            HomeScreen(navController = navController)
+            // HIEN'S CODE BEGIN
+            // Truyền ViewModel vào HomeScreen
+            HomeScreen(navController = navController, viewModel = homeViewModel)
+            // HIEN'S CODE END
         }
 
         composable(NavigationItem.Product.route) {
-            ProductScreen(navController = navController, innerPadding = innerPadding)
+            ProductScreen(navController = navController)
         }
+
         //Lưu biến để quay về đúng tab trước
         composable(
             route = NavigationItem.Stock.route,
@@ -66,7 +84,7 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
         }
 
         composable(NavigationItem.Profile.route) {
-            ProfileScreen()
+            ProfileScreen(navController = navController)
         }
 
         //HIEN'S CODE BEGIN

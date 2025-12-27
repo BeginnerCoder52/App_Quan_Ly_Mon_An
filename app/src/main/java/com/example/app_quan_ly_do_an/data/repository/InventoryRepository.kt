@@ -12,6 +12,29 @@ import java.util.Date
 class InventoryRepository {
     private val db = FirebaseFirestore.getInstance()
 
+    // HIEN'S CODE BEGIN
+    private val notificationRef = db.collection("notifications")
+
+    // Hàm ghi nhật ký hoạt động
+    private fun logActivity(title: String, content: String) {
+        val notif = AppNotification(
+            title = title,
+            content = content,
+            timestamp = java.util.Date()
+        )
+        notificationRef.add(notif)
+    }
+
+    // Hàm lấy danh sách thông báo (cho màn hình Notification)
+    fun getNotificationsFlow() = kotlinx.coroutines.flow.callbackFlow {
+        val listener = notificationRef
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .addSnapshotListener { s, _ ->
+                trySend(s?.toObjects(AppNotification::class.java) ?: emptyList())
+            }
+        awaitClose { listener.remove() }
+    }
+    // HIEN'S CODE END
     private val productRef = db.collection("products")
     private val lotRef = db.collection("inventory_lots")
     private val exportBillRef = db.collection("export_bills")
@@ -22,15 +45,37 @@ class InventoryRepository {
 
     fun addProduct(product: Product, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
         val newDoc = productRef.document()
-        newDoc.set(product.copy(productId = newDoc.id)).addOnSuccessListener { onSuccess(newDoc.id) }.addOnFailureListener { onFailure(it) }
+        newDoc.set(product.copy(productId = newDoc.id)).addOnSuccessListener {
+            logActivity("Thêm hàng hóa", "Đã thêm mới: ${product.productName}")
+            onSuccess(newDoc.id)
+        }
+            .addOnFailureListener { onFailure(it) }
     }
 
-    suspend fun updateProduct(product: Product) = try { productRef.document(product.productId).set(product).await(); true } catch (e: Exception) { false }
+    suspend fun updateProduct(product: Product) = try {
+        productRef.document(product.productId).set(product).await();
+        // HIEN'S CODE BEGIN
+        logActivity("Cập nhật hàng hóa", "Đã sửa thông tin: ${product.productName}")
+        // HIEN'S CODE END
+        true
+    } catch (e: Exception) { false }
 
-    suspend fun deleteProduct(productId: String) = try { productRef.document(productId).delete().await(); true } catch (e: Exception) { false }
+    suspend fun deleteProduct(productId: String) = try {
+        // HIEN'S CODE BEGIN
+        // Lấy tên sản phẩm trước khi xóa để ghi log cho đẹp
+        val snapshot = productRef.document(productId).get().await()
+        val name = snapshot.getString("productName") ?: "Sản phẩm $productId"
+
+        productRef.document(productId).delete().await()
+        logActivity("Xóa hàng hóa", "Đã xóa vĩnh viễn: $name")
+        // HIEN'S CODE END
+        true
+    } catch (e: Exception) { false }
 
     fun getAllProducts(onResult: (List<Product>) -> Unit) {
-        productRef.get().addOnSuccessListener { onResult(it.toObjects(Product::class.java)) }.addOnFailureListener { onResult(emptyList()) }
+        productRef.get().addOnSuccessListener {
+            onResult(it.toObjects(Product::class.java)) }
+            .addOnFailureListener { onResult(emptyList()) }
     }
 
     fun getProductsRealtime() = callbackFlow {
@@ -171,6 +216,9 @@ class InventoryRepository {
     suspend fun updateInventoryLot(lot: InventoryLot): Boolean {
         return try {
             lotRef.document(lot.lotId).set(lot).await()
+            // HIEN'S CODE BEGIN
+            logActivity("Cập nhật lô hàng", "Đã sửa lô: ${lot.lotCode}")
+            // HIEN'S CODE END
             true
         } catch (e: Exception) {
             false

@@ -72,3 +72,14 @@ data class Category(
     val categoryId: String = "",
     val categoryName: String = ""
 )
+
+// HIEN'S CODE BEGIN
+// Model cho Thông báo / Nhật ký hoạt động
+data class AppNotification(
+    val id: String = "",
+    val title: String = "",      // Ví dụ: "Thêm hàng hóa", "Xóa lô hàng"
+    val content: String = "",    // Chi tiết: "Đã thêm Bánh Hura", "Xóa lô #123"
+    val timestamp: java.util.Date? = null, // Thời gian thực hiện
+    val type: String = "INFO"    // INFO, WARNING, ERROR
+)
+// HIEN'S CODE END
