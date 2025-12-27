@@ -25,7 +25,8 @@ data class InventoryLot(
     val initialQuantity: Int = 0,
     val currentQuantity: Int = 0,
     val location: String = "",            // Vị trí lưu trữ
-    val importDate: Date? = null          // Ngày nhập (Date)
+    val importDate: Date? = null, // Ngày nhập (Date)
+    val importBillId: String = "",
 )
 
 // 3. Hóa đơn xuất hàng (ExportBill)
