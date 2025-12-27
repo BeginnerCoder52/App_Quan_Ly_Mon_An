@@ -44,7 +44,7 @@ fun HomeScreen(
                     .padding(vertical = 12.dp, horizontal = 16.dp)
             ) {
                 Text(
-                    text = "QUẢN LÝ KHO",
+                    text = "DASHBOARD",
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp
