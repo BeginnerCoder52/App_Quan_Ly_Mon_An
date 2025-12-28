@@ -85,6 +85,25 @@ class InventoryRepository {
 
     suspend fun getCategories(): List<Category> = try { categoryRef.get().await().toObjects(Category::class.java) } catch (e: Exception) { emptyList() }
 
+    suspend fun addCategory(category: Category): Boolean = try {
+        val newDoc = categoryRef.document()
+        categoryRef.document(newDoc.id).set(category.copy(categoryId = newDoc.id)).await()
+        logActivity("Thêm phân loại", "Đã thêm mới phân loại: ${category.categoryName}")
+        true
+    } catch (e: Exception) {
+        false
+    }
+
+    suspend fun deleteCategory(categoryId: String): Boolean = try {
+        val snapshot = categoryRef.document(categoryId).get().await()
+        val name = snapshot.getString("categoryName") ?: "Phân loại $categoryId"
+        categoryRef.document(categoryId).delete().await()
+        logActivity("Xóa phân loại", "Đã xóa phân loại: $name")
+        true
+    } catch (e: Exception) {
+        false
+    }
+
     suspend fun createImportBill(importBill: ImportBill, items: List<Pair<ImportBillDetail, InventoryLot>>): Boolean {
         return try {
             db.runTransaction { transaction ->
