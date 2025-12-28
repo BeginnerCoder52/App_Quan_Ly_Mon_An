@@ -106,7 +106,7 @@ class HomeViewModel : ViewModel() {
                 }
             }
 
-        // E. Cảnh báo
+        // E. Cảnh báo - Lô hàng hết hạn
         val expiringLots = lots.filter { it.expiryDate != null && it.expiryDate!!.before(thirtyDaysFromNow) && it.currentQuantity > 0 }
             .mapNotNull { lot ->
                 val p = products.find { it.productId == lot.productId }
@@ -117,11 +117,13 @@ class HomeViewModel : ViewModel() {
                         image = it.productImage,
                         subInfo = "${lot.lotCode} - Hết hạn: ${formatDate(lot.expiryDate!!)}",
                         topInfo = "SL: ${lot.currentQuantity}",
-                        bottomInfo = ""
+                        bottomInfo = "",
+                        extraId = lot.lotId // ID của lô hàng để điều hướng
                     )
                 }
             }.take(5)
 
+        // F. Cảnh báo - Tồn kho thấp
         val lowStockProducts = products.filter { it.totalStock <= it.minStock }
             .map {
                 DashboardProductData(
@@ -168,10 +170,11 @@ data class HomeUiState(
 )
 
 data class DashboardProductData(
-    val id: String,
+    val id: String,          // Thường là productId
     val name: String,
     val image: String,
     val subInfo: String,
     val topInfo: String,
-    val bottomInfo: String
+    val bottomInfo: String,
+    val extraId: String = "" // Dùng để lưu lotId hoặc các ID bổ sung
 )
