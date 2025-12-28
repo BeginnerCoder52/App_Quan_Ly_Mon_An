@@ -2,12 +2,14 @@ package com.example.app_quan_ly_do_an.ui.viewmodel.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
+import com.example.app_quan_ly_do_an.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class RegisterViewModel : ViewModel() {
+    private val authRepository = AuthRepository()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
@@ -22,24 +24,31 @@ class RegisterViewModel : ViewModel() {
             _isLoading.value = true
 
             try {
-                // Giả lập đăng ký với delay
-                delay(1500)
+                val result = authRepository.register(fullName, email, password)
 
-                // TODO: Thay bằng logic đăng ký thật từ Firebase hoặc API
-                // Ví dụ: authRepository.register(fullName, email, password)
-
-                // Giả lập kiểm tra đơn giản
-                if (email.contains("@") && password.length >= 6) {
+                if (result.isSuccess) {
                     // Đăng ký thành công
                     onSuccess()
                 } else {
-                    onError("Email hoặc mật khẩu không hợp lệ")
+                    // Đăng ký thất bại
+                    val error = result.exceptionOrNull()
+                    onError(getErrorMessage(error))
                 }
             } catch (e: Exception) {
-                onError(e.message ?: "Đăng ký thất bại")
+                onError(getErrorMessage(e))
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+
+    private fun getErrorMessage(exception: Throwable?): String {
+        return when {
+            exception?.message?.contains("already in use") == true -> "Email đã được sử dụng"
+            exception?.message?.contains("weak-password") == true -> "Mật khẩu quá yếu"
+            exception?.message?.contains("invalid-email") == true -> "Email không hợp lệ"
+            exception?.message?.contains("network") == true -> "Lỗi kết nối mạng"
+            else -> exception?.message ?: "Đăng ký thất bại"
         }
     }
 }
