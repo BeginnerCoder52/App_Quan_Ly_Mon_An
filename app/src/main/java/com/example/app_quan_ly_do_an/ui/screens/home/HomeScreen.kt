@@ -44,7 +44,7 @@ fun HomeScreen(
                     .padding(vertical = 12.dp, horizontal = 16.dp)
             ) {
                 Text(
-                    text = "DASHBOARD",
+                    text = "Quản lý Kho",
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp
@@ -63,7 +63,7 @@ fun HomeScreen(
                     .padding(innerPadding)
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 80.dp)
+                contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 item {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -289,7 +289,15 @@ fun WarningRowItem(item: DashboardProductData, type: WarningType, navController:
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { navController.navigate(NavigationItem.ProductDetail.createRoute(item.id)) },
+            .clickable { 
+                if (type == WarningType.EXPIRING) {
+                    // Điều hướng tới chi tiết lô hàng
+                    navController.navigate(NavigationItem.BatchDetail.createRoute(item.extraId))
+                } else {
+                    // Điều hướng tới chi tiết sản phẩm
+                    navController.navigate(NavigationItem.ProductDetail.createRoute(item.id))
+                }
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(

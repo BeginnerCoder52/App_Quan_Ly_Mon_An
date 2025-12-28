@@ -30,17 +30,18 @@ fun StockScreen(navController: NavController, innerPadding: PaddingValues, initi
     val tabs = listOf("Nhập kho", "Xuất kho")
     val activeColor = Color(0xFF006633)
 
-    // Scaffold chỉ dùng để nhận padding từ MainActivity, không dùng bottomBar cho Tabs nữa
+    // Bỏ padding bottom ở Scaffold này và quản lý trực tiếp trong Column
     Scaffold(
-        modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
         containerColor = Color(0xFFF5F5F5)
     ) { scaffoldPadding ->
         Column(
             modifier = Modifier
-                .padding(scaffoldPadding)
                 .fillMaxSize()
+                // Sử dụng innerPadding.calculateBottomPadding() để tránh bị BottomBar che
+                // Không sử dụng scaffoldPadding để tránh bị hở trên (TopPadding)
+                .padding(bottom = innerPadding.calculateBottomPadding())
         ) {
-            // 1. Đưa TabRow lên đầu Column
+            // 1. TabRow sát mép trên
             TabRow(
                 selectedTabIndex = selectedTabIndex,
                 containerColor = Color.White,
