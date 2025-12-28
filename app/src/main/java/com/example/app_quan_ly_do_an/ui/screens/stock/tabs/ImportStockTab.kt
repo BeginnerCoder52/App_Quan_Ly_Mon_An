@@ -108,7 +108,6 @@ fun ImportStockTab(
             FloatingActionButton(
                 onClick = { navController.navigate(NavigationItem.AddImportBill.route) },
                 containerColor = primaryColor,
-                shape = CircleShape
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
             }

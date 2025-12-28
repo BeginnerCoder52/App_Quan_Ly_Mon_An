@@ -110,7 +110,6 @@ fun ExportStockTab(
             FloatingActionButton(
                 onClick = { navController.navigate(NavigationItem.AddExportBill.route) },
                 containerColor = primaryColor,
-                shape = CircleShape
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
             }

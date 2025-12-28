@@ -4,8 +4,6 @@ import android.Manifest
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +12,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,12 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.app_quan_ly_do_an.data.model.Product
-// HIEN'S CODE BEGIN
-// 1. THÊM IMPORT NÀY ĐỂ HIỂU ĐƯỢC Category.name
 import com.example.app_quan_ly_do_an.data.model.Category
-// HIEN'S CODE END
 import com.example.app_quan_ly_do_an.ui.components.BarcodeScanner
 import com.example.app_quan_ly_do_an.ui.viewmodel.product.AddProductViewModel
 import kotlinx.coroutines.launch
@@ -46,6 +44,7 @@ fun AddProductScreen(
     var barcode by remember { mutableStateOf("") }
 
     var category by remember { mutableStateOf("") }
+    var categorySearchText by remember { mutableStateOf("") }
     var unit by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var minStock by remember { mutableStateOf("") }
@@ -58,6 +57,15 @@ fun AddProductScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Lọc danh sách category theo text nhập vào
+    val filteredCategories = remember(categories, categorySearchText) {
+        categories.filter { it.categoryName.contains(categorySearchText, ignoreCase = true) }
+    }
+
+    // Logic hiển thị nút "Thêm mới"
+    val showAddCategoryOption = categorySearchText.isNotBlank() &&
+            categories.none { it.categoryName.equals(categorySearchText, ignoreCase = true) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -110,15 +118,9 @@ fun AddProductScreen(
             Dialog(onDismissRequest = { showCameraDialog = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     BarcodeScanner(onBarcodeDetected = { code ->
-                        // HIEN'S CODE BEGIN
-                        // 2. LOGIC TỰ SINH SKU:
-                        barcode = code // Điền mã vạch
-                        if (productCode.isEmpty()) {
-                            productCode = code // Tự điền SKU bằng mã vạch nếu đang trống
-                        }
+                        barcode = code
+                        if (productCode.isEmpty()) productCode = code
                         showCameraDialog = false
-                        scope.launch { Toast.makeText(context, "Đã quét: $code", Toast.LENGTH_SHORT).show() }
-                        // HIEN'S CODE END
                     })
                     IconButton(onClick = { showCameraDialog = false }, modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)) {
                         Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
@@ -152,30 +154,66 @@ fun AddProductScreen(
 
                         ProductTextField(label = "Tên hàng hóa", value = productName, onValueChange = { productName = it }, required = true)
 
-                        ExposedDropdownMenuBox(
-                            expanded = expandedCategory,
-                            onExpandedChange = { expandedCategory = !expandedCategory }
-                        ) {
+                        // PHẦN FIX LỖI MẤT FOCUS TẠI ĐÂY:
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             OutlinedTextField(
-                                value = category,
-                                onValueChange = {},
-                                readOnly = true,
-                                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                                value = categorySearchText,
+                                onValueChange = {
+                                    categorySearchText = it
+                                    expandedCategory = true // Tự mở dropdown khi gõ
+                                },
+                                modifier = Modifier.fillMaxWidth(),
                                 label = { Text("Nhóm hàng") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategory) },
-                                shape = RoundedCornerShape(12.dp)
+                                trailingIcon = {
+                                    IconButton(onClick = { expandedCategory = !expandedCategory }) {
+                                        Icon(if (expandedCategory) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown, null)
+                                    }
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color(0xFF006633),
+                                    focusedLabelColor = Color(0xFF006633),
+                                    cursorColor = Color(0xFF006633)
+                                )
                             )
-                            ExposedDropdownMenu(expanded = expandedCategory, onDismissRequest = { expandedCategory = false }) {
-                                categories.forEach { categoryItem ->
+
+                            // Sử dụng DropdownMenu thông thường với PopupProperties(focusable = false)
+                            DropdownMenu(
+                                expanded = expandedCategory && (filteredCategories.isNotEmpty() || showAddCategoryOption),
+                                onDismissRequest = { expandedCategory = false },
+                                // Quan trọng: focusable = false giúp bàn phím không bị đóng và ô nhập không mất focus
+                                properties = PopupProperties(focusable = false),
+                                modifier = Modifier.fillMaxWidth(0.85f) // Giới hạn chiều rộng menu
+                            ) {
+                                filteredCategories.forEach { categoryItem ->
                                     DropdownMenuItem(
-                                        // HIEN'S CODE BEGIN
-                                        // 3. SỬA LỖI FORMAT: Gọi .name trực tiếp vì đã import Class Category
                                         text = { Text(categoryItem.categoryName) },
                                         onClick = {
                                             category = categoryItem.categoryName
+                                            categorySearchText = categoryItem.categoryName
                                             expandedCategory = false
                                         }
-                                        // HIEN'S CODE END
+                                    )
+                                }
+
+                                if (showAddCategoryOption) {
+                                    if (filteredCategories.isNotEmpty()) HorizontalDivider()
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF0E8A38))
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Thêm mới: \"$categorySearchText\"", color = Color(0xFF0E8A38), fontWeight = FontWeight.Bold)
+                                            }
+                                        },
+                                        onClick = {
+                                            viewModel.addCategory(categorySearchText, {
+                                                category = categorySearchText
+                                                expandedCategory = false
+                                            }, { msg ->
+                                                scope.launch { snackbarHostState.showSnackbar(msg) }
+                                            })
+                                        }
                                     )
                                 }
                             }
@@ -192,6 +230,7 @@ fun AddProductScreen(
         }
     }
 }
+
 @Composable
 fun ProductTextField(
     label: String,

@@ -22,10 +22,22 @@ class AddProductViewModel : ViewModel() {
         loadCategories()
     }
 
-    private fun loadCategories() {
+    fun loadCategories() {
         viewModelScope.launch {
             val list = repository.getCategories()
             _categories.value = list
+        }
+    }
+
+    fun addCategory(categoryName: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        viewModelScope.launch {
+            val success = repository.addCategory(Category(categoryName = categoryName))
+            if (success) {
+                loadCategories()
+                onSuccess()
+            } else {
+                onFailure("Không thể thêm phân loại mới")
+            }
         }
     }
 
