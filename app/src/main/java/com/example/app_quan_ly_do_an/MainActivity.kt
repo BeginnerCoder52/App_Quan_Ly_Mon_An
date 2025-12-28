@@ -6,16 +6,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.app_quan_ly_do_an.ui.components.BottomNavigationBar
 import com.example.app_quan_ly_do_an.ui.navigation.AppNavigation
 import com.example.app_quan_ly_do_an.ui.theme.App_Quan_Ly_Do_AnTheme
-// HIEN'S CODE BEGIN
-import androidx.lifecycle.viewmodel.compose.viewModel
-// CẬP NHẬT IMPORT: Trỏ đến package mới chứa HomeViewModel
 import com.example.app_quan_ly_do_an.ui.viewmodel.home.HomeViewModel
-// HIEN'S CODE END
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,27 +24,33 @@ class MainActivity : ComponentActivity() {
         setContent {
             App_Quan_Ly_Do_AnTheme {
                 val navController = rememberNavController()
-
-                // HIEN'S CODE BEGIN
-                // CẬP NHẬT: Khởi tạo HomeViewModel trực tiếp (không cần factory)
                 val homeViewModel: HomeViewModel = viewModel()
-                // HIEN'S CODE END
+
+                // Theo dõi route hiện tại để ẩn/hiện BottomBar
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
+
+                // Kiểm tra nếu đang ở màn hình Login hoặc Register
+                val isAuthScreen = currentRoute == "login" || currentRoute == "register"
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
-                        BottomNavigationBar(navController = navController)
+                        // Chỉ hiển thị BottomBar khi KHÔNG ở màn hình Login/Register
+                        if (!isAuthScreen) {
+                            BottomNavigationBar(navController = navController)
+                        }
                     }
                 ) { innerPadding ->
-                    // HIEN'S CODE BEGIN
                     AppNavigation(
                         navController = navController,
                         innerPadding = innerPadding,
-                        homeViewModel = homeViewModel // Truyền ViewModel xuống
+                        homeViewModel = homeViewModel
                     )
-                    // HIEN'S CODE END
                 }
             }
         }
     }
 }
+
+
