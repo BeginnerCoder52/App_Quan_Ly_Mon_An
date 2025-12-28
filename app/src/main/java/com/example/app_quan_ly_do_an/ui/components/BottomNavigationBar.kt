@@ -28,7 +28,7 @@ fun BottomNavigationBar(
     NavigationBar(
         modifier = modifier,
         containerColor = Color.White,
-        contentColor = Color(0xFFFFC107)
+        contentColor = Color(0xFF006633)
     ) {
         navigationItems.forEach { item ->
             val isSelected = currentRoute == item.route
@@ -67,11 +67,11 @@ fun BottomNavigationBar(
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color(0xFFFFC107),
-                    selectedTextColor = Color(0xFFFFC107),
+                    selectedIconColor = Color(0xFF006633),
+                    selectedTextColor = Color(0xFF006633),
                     unselectedIconColor = Color.Gray,
                     unselectedTextColor = Color.Gray,
-                    indicatorColor = Color(0xFFFFF8E1)
+                    indicatorColor = Color(0xFFA1CEBA)
                 )
             )
         }

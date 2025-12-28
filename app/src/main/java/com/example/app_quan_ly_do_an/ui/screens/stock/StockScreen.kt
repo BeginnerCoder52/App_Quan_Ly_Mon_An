@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface // Thêm import Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -30,17 +30,24 @@ fun StockScreen(navController: NavController, innerPadding: PaddingValues, initi
     val tabs = listOf("Nhập kho", "Xuất kho")
     val activeColor = Color(0xFF006633)
 
-    // Scaffold chỉ dùng để nhận padding từ MainActivity, không dùng bottomBar cho Tabs nữa
-    Scaffold(
-        modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
-        containerColor = Color(0xFFF5F5F5)
-    ) { scaffoldPadding ->
+    // Thay thế Scaffold bằng Surface để tránh lỗi unused scaffoldPadding
+    // Surface vẫn cho phép thiết lập màu nền (color thay cho containerColor)
+    Surface(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(
+                top = innerPadding.calculateTopPadding(),
+                bottom = innerPadding.calculateBottomPadding()
+            ),
+        color = Color(0xFFF5F5F5)
+    ) {
         Column(
             modifier = Modifier
-                .padding(scaffoldPadding)
                 .fillMaxSize()
+                // Sử dụng innerPadding.calculateBottomPadding() để tránh bị BottomBar che
+                .padding(bottom = innerPadding.calculateBottomPadding())
         ) {
-            // 1. Đưa TabRow lên đầu Column
+            // 1. TabRow sát mép trên
             TabRow(
                 selectedTabIndex = selectedTabIndex,
                 containerColor = Color.White,
