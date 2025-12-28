@@ -21,20 +21,37 @@ import androidx.navigation.NavController
 import com.example.app_quan_ly_do_an.data.model.ImportBill // Giả định model ImportBill nằm ở đây
 import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.example.app_quan_ly_do_an.ui.viewmodel.import_bill.ImportBillListViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 @Composable
-fun ImportStockTab(navController: NavController) {
+fun ImportStockTab(
+    navController: NavController,
+    viewModel: ImportBillListViewModel = viewModel()) {
     // Màu chủ đạo
     val primaryColor = Color(0xFF006633)
     val backgroundColor = Color(0xFFF5F5F5)
+    // Lắng nghe dữ liệu thật từ ViewModel
+    val realBills by viewModel.bills.collectAsState()
 
+    // Hàm format ngày tháng (Long -> String)
+    fun formatDate(date: Date?): String {
+        if (date == null) return "Chưa rõ"
+        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        return sdf.format(date)
+    }
     // Dữ liệu giả lập
-    val sampleBills = listOf(
-        ImportBill("1", "PN005", 0, "Công ty CP Food",  5500000.0),
-        ImportBill("2", "PN004", 0, "Vinamilk",  2100000.0),
-        ImportBill("3", "PN003", 0, "Chợ Đầu Mối",  890000.0),
-        ImportBill("4", "PN002", 0, "Coca Cola VN",  12500000.0),
-        ImportBill("5", "PN001", 0, "Pepsi Co",  4300000.0)
-    )
+//    val sampleBills = listOf(
+//        ImportBill("1", "PN005", 0, "Công ty CP Food",  5500000.0),
+//        ImportBill("2", "PN004", 0, "Vinamilk",  2100000.0),
+//        ImportBill("3", "PN003", 0, "Chợ Đầu Mối",  890000.0),
+//        ImportBill("4", "PN002", 0, "Coca Cola VN",  12500000.0),
+//        ImportBill("5", "PN001", 0, "Pepsi Co",  4300000.0)
+//    )
 
     Scaffold(
         containerColor = backgroundColor,
@@ -138,7 +155,7 @@ fun ImportStockTab(navController: NavController) {
                             color = Color.Black
                         )
                         Text(
-                            text = "${sampleBills.size}", // Đếm số lượng thực tế
+                            text = "${realBills.size}", // Đếm số lượng thực tế
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                             color = Color.Black
@@ -161,9 +178,10 @@ fun ImportStockTab(navController: NavController) {
                         .fillMaxSize()
                         .padding(top = 8.dp)
                 ) {
-                    items(sampleBills) { bill ->
+                    items(realBills) { bill ->
                         ImportBillItem(
                             bill = bill,
+                            dateString = formatDate(bill.date),
                             primaryColor = primaryColor, // Truyền màu xuống item
                             onClick = {
                                 navController.navigate(NavigationItem.ImportBillDetail.createRoute(bill.importBillId))
@@ -182,6 +200,7 @@ fun ImportStockTab(navController: NavController) {
 @Composable
 fun ImportBillItem(
     bill: ImportBill,
+    dateString: String,
     primaryColor: Color,
     onClick: () -> Unit
 ) {
@@ -206,7 +225,7 @@ fun ImportBillItem(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Ngày nhập: ${bill.date}", // Đổi label thành Ngày nhập
+                    text = "Ngày nhập: $dateString",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )

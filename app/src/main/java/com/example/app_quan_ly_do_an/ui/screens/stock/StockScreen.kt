@@ -1,34 +1,25 @@
 package com.example.app_quan_ly_do_an.ui.screens.stock
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
-import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
 import com.example.app_quan_ly_do_an.ui.screens.stock.tabs.ExportStockTab
 import com.example.app_quan_ly_do_an.ui.screens.stock.tabs.ImportStockTab
 
@@ -39,10 +30,17 @@ fun StockScreen(navController: NavController, innerPadding: PaddingValues, initi
     val tabs = listOf("Nhập kho", "Xuất kho")
     val activeColor = Color(0xFF006633)
 
+    // Scaffold chỉ dùng để nhận padding từ MainActivity, không dùng bottomBar cho Tabs nữa
     Scaffold(
         modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
-        // Đã xóa topbar và float button
-        bottomBar = {
+        containerColor = Color(0xFFF5F5F5)
+    ) { scaffoldPadding ->
+        Column(
+            modifier = Modifier
+                .padding(scaffoldPadding)
+                .fillMaxSize()
+        ) {
+            // 1. Đưa TabRow lên đầu Column
             TabRow(
                 selectedTabIndex = selectedTabIndex,
                 containerColor = Color.White,
@@ -69,13 +67,8 @@ fun StockScreen(navController: NavController, innerPadding: PaddingValues, initi
                     )
                 }
             }
-        }
-    ) { scaffoldPadding ->
-        Box(
-            modifier = Modifier
-                .padding(scaffoldPadding)
-                .fillMaxSize()
-        ) {
+
+            // 2. Nội dung thay đổi bên dưới TabRow
             when (selectedTabIndex) {
                 0 -> ImportStockTab(navController)
                 1 -> ExportStockTab(navController)

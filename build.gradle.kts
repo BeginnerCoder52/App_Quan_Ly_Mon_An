@@ -4,4 +4,9 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
     id("com.google.gms.google-services") version "4.4.4" apply false
+
+    // HIEN'S CODE BEGIN
+    // Nếu Kotlin là 2.0.21, hãy dùng:
+     id("com.google.devtools.ksp") version "2.0.21-1.0.25" apply false
+    // HIEN'S CODE END
 }

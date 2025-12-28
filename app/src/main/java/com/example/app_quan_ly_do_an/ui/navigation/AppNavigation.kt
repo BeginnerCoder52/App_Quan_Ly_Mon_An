@@ -1,15 +1,12 @@
 package com.example.app_quan_ly_do_an.ui.navigation
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-
 import com.example.app_quan_ly_do_an.ui.screens.home.HomeScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.StockScreen
@@ -19,17 +16,21 @@ import com.example.app_quan_ly_do_an.ui.screens.profile.ProfileScreen
 //HIEN'S CODE BEGIN
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.AddImportBillScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.ImportBillDetailScreen
+import com.example.app_quan_ly_do_an.ui.viewmodel.home.HomeViewModel
+// Thêm 2 import này để dùng được Modifier.padding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
 //HIEN'S CODE END
+import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.EditImportBillScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductDetailScreen
-
 import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.ExportBillDetailScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.AddExportBillScreen
+import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.EditExportBillScreen
 
 import com.example.app_quan_ly_do_an.ui.screens.product.BatchListScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.AddProductScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.EditProductScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.EditBatchScreen
-
 
 /**
  * Defines the navigation graph for the application.
@@ -40,19 +41,32 @@ import com.example.app_quan_ly_do_an.ui.screens.product.EditBatchScreen
  * @param navController The navigation controller used to navigate between screens.
  */
 @Composable
-fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues) {
+fun AppNavigation(
+    navController: NavHostController,
+    innerPadding: PaddingValues,
+    // HIEN'S CODE BEGIN
+    homeViewModel: HomeViewModel // Thêm tham số này để khớp với MainActivity
+    // HIEN'S CODE END
+) {
     NavHost(
         navController = navController,
         startDestination = NavigationItem.Home.route,
+        // HIEN'S CODE BEGIN
+        // QUAN TRỌNG: Thêm dòng này để đẩy nội dung lên trên BottomBar
         modifier = Modifier.padding(innerPadding)
+        // HIEN'S CODE END
     ) {
         composable(NavigationItem.Home.route) {
-            HomeScreen()
+            // HIEN'S CODE BEGIN
+            // Truyền ViewModel vào HomeScreen
+            HomeScreen(navController = navController, viewModel = homeViewModel)
+            // HIEN'S CODE END
         }
 
         composable(NavigationItem.Product.route) {
             ProductScreen(navController = navController)
         }
+
         //Lưu biến để quay về đúng tab trước
         composable(
             route = NavigationItem.Stock.route,
@@ -70,7 +84,7 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
         }
 
         composable(NavigationItem.Profile.route) {
-            ProfileScreen()
+            ProfileScreen(navController = navController)
         }
 
         //HIEN'S CODE BEGIN
@@ -86,8 +100,8 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
         composable(NavigationItem.ImportBillDetail.route) { backStackEntry ->
             val billId = backStackEntry.arguments?.getString("billId")
             ImportBillDetailScreen(
+                navController = navController,
                 billId = billId,
-                onBack = { navController.popBackStack() }
             )
         }
         //HIEN'S CODE END
@@ -99,7 +113,6 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
                 onBack = { navController.popBackStack() }
             )
         }
-
         composable(NavigationItem.BatchList.route) { backStackEntry ->
             val productId = backStackEntry.arguments?.getString("productId")
             BatchListScreen(
@@ -128,8 +141,7 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             val productId = backStackEntry.arguments?.getString("productId")
             EditProductScreen(
                 productId = productId,
-                onBack = { navController.popBackStack() },
-                onSave = { navController.popBackStack() }
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -138,7 +150,15 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             EditBatchScreen(
                 batchId = batchId,
                 onBack = { navController.popBackStack() },
-                onSave = { navController.popBackStack() }
+            )
+        }
+        composable(NavigationItem.EditImportBill.route) { backStackEntry ->
+            val billId = backStackEntry.arguments?.getString("billId")
+            EditImportBillScreen(
+                navController = navController,
+                billId = billId,
+                onBack = { navController.popBackStack() },
+                bottomPadding = innerPadding.calculateBottomPadding() // Quan trọng để tránh BottomBar
             )
         }
 
@@ -157,5 +177,14 @@ fun AppNavigation(navController: NavHostController, innerPadding: PaddingValues)
             )
         }
 
+        composable(NavigationItem.EditExportBill.route) { backStackEntry ->
+            val billId = backStackEntry.arguments?.getString("billId")
+            EditExportBillScreen(
+                navController = navController,
+                billId = billId,
+                onBack = { navController.popBackStack() },
+                bottomPadding = innerPadding.calculateBottomPadding()
+            )
+        }
     }
 }
