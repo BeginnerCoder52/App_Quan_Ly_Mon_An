@@ -56,6 +56,8 @@ plugins {
         implementation("com.google.firebase:firebase-analytics")
         // Thêm thư viện Firestore
         implementation("com.google.firebase:firebase-firestore")
+        // Thêm thư viện Firebase Authentication
+        implementation("com.google.firebase:firebase-auth")
         // Thêm thư viện Coroutines để xử lý bất đồng bộ mượt hơn
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
         // Core Android

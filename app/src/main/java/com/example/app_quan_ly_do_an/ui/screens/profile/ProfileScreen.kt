@@ -28,15 +28,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
 import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
 import androidx.compose.ui.platform.LocalContext
+import com.example.app_quan_ly_do_an.data.repository.AuthRepository
+import com.example.app_quan_ly_do_an.data.model.User
+import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun ProfileScreen(navController: NavController) {
     val primaryColor = Color(0xFF006633)
     val backgroundColor = Color(0xFFF5F5F5)
     val context = LocalContext.current
+    val authRepository = remember { AuthRepository() }
+
+    // State để lưu thông tin user
+    var currentUser by remember { mutableStateOf<User?>(null) }
+    var isLoadingUser by remember { mutableStateOf(true) }
 
     // State để hiển thị dialog xác nhận đăng xuất
     var showLogoutDialog by remember { mutableStateOf(false) }
+
+    // Lấy thông tin user khi màn hình được load
+    LaunchedEffect(Unit) {
+        isLoadingUser = true
+        currentUser = authRepository.getCurrentUser()
+        isLoadingUser = false
+    }
 
     // Dialog xác nhận đăng xuất
     if (showLogoutDialog) {
@@ -62,6 +77,8 @@ fun ProfileScreen(navController: NavController) {
                 TextButton(
                     onClick = {
                         showLogoutDialog = false
+                        // Đăng xuất khỏi Firebase
+                        authRepository.logout()
                         Toast.makeText(context, "Đã đăng xuất thành công", Toast.LENGTH_SHORT).show()
                         // Quay về trang Login và xóa toàn bộ back stack
                         navController.navigate(NavigationItem.Login.route) {
@@ -83,9 +100,6 @@ fun ProfileScreen(navController: NavController) {
 
     Scaffold(
         containerColor = backgroundColor
-        // HIEN'S CODE BEGIN
-        // ĐÃ XÓA NÚT FAB (+) Ở ĐÂY THEO YÊU CẦU
-        // HIEN'S CODE END
     ) { padding ->
         Column(
             modifier = Modifier
@@ -100,16 +114,32 @@ fun ProfileScreen(navController: NavController) {
                     .background(color = primaryColor, shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(
-                        modifier = Modifier.size(80.dp).clip(CircleShape).background(Color.White),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(imageVector = Icons.Default.Person, contentDescription = null, tint = primaryColor, modifier = Modifier.size(50.dp))
+                if (isLoadingUser) {
+                    // Hiển thị loading khi đang tải thông tin user
+                    CircularProgressIndicator(color = Color.White)
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            modifier = Modifier.size(80.dp).clip(CircleShape).background(Color.White),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(imageVector = Icons.Default.Person, contentDescription = null, tint = primaryColor, modifier = Modifier.size(50.dp))
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        // Hiển thị tên từ Firebase Auth
+                        Text(
+                            text = currentUser?.displayName ?: "Người dùng",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        // Hiển thị email từ Firebase Auth
+                        Text(
+                            text = currentUser?.email ?: "",
+                            fontSize = 14.sp,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(text = "Quản Lý Kho", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Text(text = "Cửa hàng thực phẩm sạch", fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
                 }
             }
 
