@@ -10,7 +10,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,40 +20,87 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.app_quan_ly_do_an.data.model.ImportBill // Giả định model ImportBill nằm ở đây
+import com.example.app_quan_ly_do_an.data.model.ImportBill
 import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
 
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import com.example.app_quan_ly_do_an.ui.viewmodel.import_bill.ImportBillListViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+// Enum sắp xếp cho Phiếu nhập
+enum class ImportSortOption {
+    DateNewest,
+    DateOldest,
+    AmountHighest,
+    AmountLowest,
+    SupplierAZ,
+    SupplierZA
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImportStockTab(
     navController: NavController,
-    viewModel: ImportBillListViewModel = viewModel()) {
-    // Màu chủ đạo
+    viewModel: ImportBillListViewModel = viewModel()
+) {
     val primaryColor = Color(0xFF006633)
     val backgroundColor = Color(0xFFF5F5F5)
-    // Lắng nghe dữ liệu thật từ ViewModel
+
     val realBills by viewModel.bills.collectAsState()
 
-    // Hàm format ngày tháng (Long -> String)
+    // State cho tìm kiếm và sắp xếp
+    var searchQuery by remember { mutableStateOf("") }
+    var showSortSheet by remember { mutableStateOf(false) }
+    var selectedSort by remember { mutableStateOf(ImportSortOption.DateNewest) }
+
+    // Logic lọc và sắp xếp dữ liệu
+    val filteredBills = remember(realBills, searchQuery, selectedSort) {
+        var list = if (searchQuery.isEmpty()) {
+            realBills
+        } else {
+            realBills.filter {
+                it.importBillIdCode.contains(searchQuery, ignoreCase = true) ||
+                        it.supplier.contains(searchQuery, ignoreCase = true)
+            }
+        }
+
+        list = when (selectedSort) {
+            ImportSortOption.DateNewest -> list.sortedByDescending { it.date }
+            ImportSortOption.DateOldest -> list.sortedBy { it.date }
+            ImportSortOption.AmountHighest -> list.sortedByDescending { it.totalAmount }
+            ImportSortOption.AmountLowest -> list.sortedBy { it.totalAmount }
+            ImportSortOption.SupplierAZ -> list.sortedBy { it.supplier }
+            ImportSortOption.SupplierZA -> list.sortedByDescending { it.supplier }
+        }
+        list
+    }
+
     fun formatDate(date: Date?): String {
         if (date == null) return "Chưa rõ"
-        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         return sdf.format(date)
     }
-    // Dữ liệu giả lập
-//    val sampleBills = listOf(
-//        ImportBill("1", "PN005", 0, "Công ty CP Food",  5500000.0),
-//        ImportBill("2", "PN004", 0, "Vinamilk",  2100000.0),
-//        ImportBill("3", "PN003", 0, "Chợ Đầu Mối",  890000.0),
-//        ImportBill("4", "PN002", 0, "Coca Cola VN",  12500000.0),
-//        ImportBill("5", "PN001", 0, "Pepsi Co",  4300000.0)
-//    )
+
+    // Bottom Sheet sắp xếp
+    if (showSortSheet) {
+        ModalBottomSheet(onDismissRequest = { showSortSheet = false }) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Sắp xếp theo", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SortItem("Mới nhất", selectedSort == ImportSortOption.DateNewest) { selectedSort = ImportSortOption.DateNewest; showSortSheet = false }
+                SortItem("Cũ nhất", selectedSort == ImportSortOption.DateOldest) { selectedSort = ImportSortOption.DateOldest; showSortSheet = false }
+                SortItem("Giá trị: Cao nhất", selectedSort == ImportSortOption.AmountHighest) { selectedSort = ImportSortOption.AmountHighest; showSortSheet = false }
+                SortItem("Giá trị: Thấp nhất", selectedSort == ImportSortOption.AmountLowest) { selectedSort = ImportSortOption.AmountLowest; showSortSheet = false }
+                SortItem("Nhà cung cấp: A-Z", selectedSort == ImportSortOption.SupplierAZ) { selectedSort = ImportSortOption.SupplierAZ; showSortSheet = false }
+                SortItem("Nhà cung cấp: Z-A", selectedSort == ImportSortOption.SupplierZA) { selectedSort = ImportSortOption.SupplierZA; showSortSheet = false }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
 
     Scaffold(
         containerColor = backgroundColor,
@@ -71,132 +120,101 @@ fun ImportStockTab(
                 .padding(innerPadding)
                 .background(backgroundColor)
         ) {
-            // --- HEADER SECTION  ---
+            // --- HEADER SECTION (Giống ProductScreen) ---
             Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color.White,
-                shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
-                shadowElevation = 2.dp
+                shadowElevation = 2.dp,
+                color = Color.White
             ) {
-                Column {
-                    // 1. Title và Action Icons
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Text("Phiếu nhập", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                         Text(
-                            text = "Phiếu nhập", // Đổi tên title
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
+                            "Tổng: ${filteredBills.size} phiếu",
+                            color = Color.Gray,
+                            fontSize = 14.sp
                         )
-                        Row {
-                            IconButton(onClick = {}) {
-                                Icon(Icons.Default.Search, contentDescription = "Search")
-                            }
-                            IconButton(onClick = {}) {
-                                Icon(Icons.Default.SwapVert, contentDescription = "Sort")
-                            }
-                            IconButton(onClick = {}) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More")
-                            }
-                        }
                     }
 
-                    // 2. Filter Button
-                    Row(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp)
-                            .padding(bottom = 8.dp)
-                    ) {
-                        Button(
-                            onClick = { /* Open Filter Dropdown */ },
-                            colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                            modifier = Modifier.height(40.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.List,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Tất cả phiếu nhập", // Đổi tên filter
-                                color = Color.White,
-                                fontSize = 14.sp
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                Icons.Default.ArrowDropDown,
-                                contentDescription = null,
-                                tint = Color.White
-                            )
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // 3. Tổng Summary
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        Text(
-                            text = "Tổng",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            color = Color.Black
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Tìm mã phiếu, nhà cung cấp...") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp),
+                            shape = RoundedCornerShape(25.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = primaryColor,
+                                unfocusedBorderColor = Color.LightGray
+                            ),
+                            singleLine = true
                         )
-                        Text(
-                            text = "${realBills.size}", // Đếm số lượng thực tế
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            color = Color.Black
-                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        IconButton(onClick = { showSortSheet = true }) {
+                            Icon(Icons.Default.SwapVert, contentDescription = "Sort")
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(15.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // --- LIST SECTION ---
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = Color.White,
-                shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
-                shadowElevation = 1.dp
-            ) {
+            if (filteredBills.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Không tìm thấy phiếu nhập nào", color = Color.Gray)
+                }
+            } else {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 8.dp)
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
-                    items(realBills) { bill ->
+                    items(filteredBills) { bill ->
                         ImportBillItem(
                             bill = bill,
                             dateString = formatDate(bill.date),
-                            primaryColor = primaryColor, // Truyền màu xuống item
+                            primaryColor = primaryColor,
                             onClick = {
                                 navController.navigate(NavigationItem.ImportBillDetail.createRoute(bill.importBillId))
                             }
                         )
                     }
-                    // Spacer dưới cùng để không bị che bởi FAB
-                    item { Spacer(modifier = Modifier.height(80.dp)) }
                 }
             }
         }
     }
 }
 
-// --- ITEM ---
+@Composable
+fun SortItem(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = text,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            color = if (isSelected) Color(0xFF006633) else Color.Black
+        )
+        if (isSelected) {
+            Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF006633))
+        }
+    }
+}
+
 @Composable
 fun ImportBillItem(
     bill: ImportBill,
@@ -204,42 +222,64 @@ fun ImportBillItem(
     primaryColor: Color,
     onClick: () -> Unit
 ) {
-    Column(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White,
+        shadowElevation = 1.dp
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            // Cột bên trái: Mã + Ngày
-            Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = bill.importBillIdCode,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "NCC: ${bill.supplier}",
+                        fontSize = 14.sp,
+                        color = Color.DarkGray,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
                 Text(
-                    text = bill.importBillIdCode,
+                    text = "${"%,.0f".format(bill.totalAmount)} đ",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Ngày nhập: $dateString",
-                    fontSize = 14.sp,
-                    color = Color.Gray
+                    color = primaryColor
                 )
             }
 
-            // Cột bên phải: Tổng tiền
-            Text(
-                text = "Tổng tiền: ${"%,.0f".format(bill.totalAmount)}",
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                color = primaryColor // Dùng màu xanh chủ đạo
-            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.AccessTime,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = Color.Gray
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = dateString,
+                    fontSize = 13.sp,
+                    color = Color.Gray
+                )
+            }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
     }
 }

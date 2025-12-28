@@ -2,6 +2,9 @@ package com.example.app_quan_ly_do_an.ui.screens.stock.tabs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,9 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,6 +29,17 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+// Enum sắp xếp cho Phiếu xuất
+enum class ExportSortOption {
+    DateNewest,
+    DateOldest,
+    AmountHighest,
+    AmountLowest,
+    CodeAZ,
+    CodeZA
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExportStockTab(
     navController: NavController,
@@ -40,11 +52,56 @@ fun ExportStockTab(
     // Lắng nghe dữ liệu thật từ ViewModel
     val realBills by viewModel.bills.collectAsState()
 
+    // State cho tìm kiếm và sắp xếp
+    var searchQuery by remember { mutableStateOf("") }
+    var showSortSheet by remember { mutableStateOf(false) }
+    var selectedSort by remember { mutableStateOf(ExportSortOption.DateNewest) }
+
+    // Logic lọc và sắp xếp dữ liệu
+    val filteredBills = remember(realBills, searchQuery, selectedSort) {
+        var list = if (searchQuery.isEmpty()) {
+            realBills
+        } else {
+            realBills.filter {
+                it.exportBillCode.contains(searchQuery, ignoreCase = true)
+            }
+        }
+
+        list = when (selectedSort) {
+            ExportSortOption.DateNewest -> list.sortedByDescending { it.date }
+            ExportSortOption.DateOldest -> list.sortedBy { it.date }
+            ExportSortOption.AmountHighest -> list.sortedByDescending { it.totalAmount }
+            ExportSortOption.AmountLowest -> list.sortedBy { it.totalAmount }
+            ExportSortOption.CodeAZ -> list.sortedBy { it.exportBillCode }
+            ExportSortOption.CodeZA -> list.sortedByDescending { it.exportBillCode }
+        }
+        list
+    }
+
     // Hàm format ngày tháng (Date -> String)
     fun formatDate(date: Date?): String {
-        if (date == null) return "..."
-        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        if (date == null) return "Chưa rõ"
+        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         return sdf.format(date)
+    }
+
+    // Bottom Sheet sắp xếp
+    if (showSortSheet) {
+        ModalBottomSheet(onDismissRequest = { showSortSheet = false }) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Sắp xếp theo", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SortItem("Mới nhất", selectedSort == ExportSortOption.DateNewest) { selectedSort = ExportSortOption.DateNewest; showSortSheet = false }
+                SortItem("Cũ nhất", selectedSort == ExportSortOption.DateOldest) { selectedSort = ExportSortOption.DateOldest; showSortSheet = false }
+                SortItem("Giá trị: Cao nhất", selectedSort == ExportSortOption.AmountHighest) { selectedSort = ExportSortOption.AmountHighest; showSortSheet = false }
+                SortItem("Giá trị: Thấp nhất", selectedSort == ExportSortOption.AmountLowest) { selectedSort = ExportSortOption.AmountLowest; showSortSheet = false }
+                SortItem("Mã phiếu: A-Z", selectedSort == ExportSortOption.CodeAZ) { selectedSort = ExportSortOption.CodeAZ; showSortSheet = false }
+                SortItem("Mã phiếu: Z-A", selectedSort == ExportSortOption.CodeZA) { selectedSort = ExportSortOption.CodeZA; showSortSheet = false }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
     }
 
     Scaffold(
@@ -65,114 +122,66 @@ fun ExportStockTab(
                 .padding(innerPadding)
                 .background(backgroundColor)
         ) {
-            // --- HEADER SECTION ---
+            // --- HEADER SECTION (Giống ProductScreen) ---
             Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color.White,
-                shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
-                shadowElevation = 2.dp
+                shadowElevation = 2.dp,
+                color = Color.White
             ) {
-                Column {
-                    // 1. Title và Action Icons
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Text("Phiếu xuất", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                         Text(
-                            text = "Phiếu xuất",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
+                            "Tổng: ${filteredBills.size} phiếu",
+                            color = Color.Gray,
+                            fontSize = 14.sp
                         )
-                        Row {
-                            IconButton(onClick = {}) {
-                                Icon(Icons.Default.Search, contentDescription = "Search")
-                            }
-                            IconButton(onClick = {}) {
-                                Icon(Icons.Default.SwapVert, contentDescription = "Sort")
-                            }
-                            IconButton(onClick = {}) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More")
-                            }
-                        }
                     }
 
-                    // 2. Filter Button
-                    Row(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp)
-                            .padding(bottom = 8.dp)
-                    ) {
-                        Button(
-                            onClick = { /* Open Filter Dropdown */ },
-                            colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                            modifier = Modifier.height(40.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.List,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Tất cả phiếu xuất",
-                                color = Color.White,
-                                fontSize = 14.sp
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                Icons.Default.ArrowDropDown,
-                                contentDescription = null,
-                                tint = Color.White
-                            )
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // 3. Tổng Summary
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        Text(
-                            text = "Tổng",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            color = Color.Black
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Tìm mã phiếu xuất...") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp),
+                            shape = RoundedCornerShape(25.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = primaryColor,
+                                unfocusedBorderColor = Color.LightGray
+                            ),
+                            singleLine = true
                         )
-                        Text(
-                            text = "${realBills.size}",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            color = Color.Black
-                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        IconButton(onClick = { showSortSheet = true }) {
+                            Icon(Icons.Default.SwapVert, contentDescription = "Sort")
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(15.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // --- LIST SECTION ---
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = Color.White,
-                shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
-                shadowElevation = 1.dp
-            ) {
+            if (filteredBills.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Không tìm thấy phiếu xuất nào", color = Color.Gray)
+                }
+            } else {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 8.dp)
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
-                    items(realBills) { bill ->
+                    items(filteredBills) { bill ->
                         ExportBillItem(
                             bill = bill,
                             dateString = formatDate(bill.date),
@@ -182,8 +191,6 @@ fun ExportStockTab(
                             }
                         )
                     }
-                    // Spacer dưới cùng để không bị che bởi FAB
-                    item { Spacer(modifier = Modifier.height(80.dp)) }
                 }
             }
         }
@@ -197,42 +204,63 @@ fun ExportBillItem(
     primaryColor: Color,
     onClick: () -> Unit
 ) {
-    Column(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White,
+        shadowElevation = 1.dp
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            // Cột bên trái: Mã + Ngày
-            Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = bill.exportBillCode,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Ngày xuất: $dateString",
+                        fontSize = 14.sp,
+                        color = Color.DarkGray
+                    )
+                }
+
                 Text(
-                    text = bill.exportBillCode,
+                    text = "${"%,.0f".format(bill.totalAmount)} đ",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Ngày xuất: $dateString",
-                    fontSize = 14.sp,
-                    color = Color.Gray
+                    color = primaryColor
                 )
             }
 
-            // Cột bên phải: Tổng tiền
-            Text(
-                text = "Tổng tiền: ${"%,.0f".format(bill.totalAmount)}",
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                color = primaryColor
-            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Receipt,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = Color.Gray
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Nhấp để xem chi tiết",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
     }
 }
