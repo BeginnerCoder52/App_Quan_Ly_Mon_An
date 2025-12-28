@@ -17,6 +17,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,6 +34,52 @@ fun ProfileScreen(navController: NavController) {
     val primaryColor = Color(0xFF006633)
     val backgroundColor = Color(0xFFF5F5F5)
     val context = LocalContext.current
+
+    // State để hiển thị dialog xác nhận đăng xuất
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
+    // Dialog xác nhận đăng xuất
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = null,
+                    tint = Color(0xFF0E8A38)
+                )
+            },
+            title = {
+                Text(
+                    text = "Đăng xuất",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text("Bạn có chắc chắn muốn đăng xuất khỏi tài khoản?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        Toast.makeText(context, "Đã đăng xuất thành công", Toast.LENGTH_SHORT).show()
+                        // Quay về trang Login và xóa toàn bộ back stack
+                        navController.navigate(NavigationItem.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                ) {
+                    Text("Đăng xuất", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Hủy", color = Color.Gray)
+                }
+            }
+        )
+    }
 
     Scaffold(
         containerColor = backgroundColor
@@ -117,9 +167,8 @@ fun ProfileScreen(navController: NavController) {
                         title = "Đăng xuất",
                         isDestructive = true
                     ) {
-                        Toast.makeText(context, "Đã đăng xuất thành công", Toast.LENGTH_SHORT).show()
-                        // Quay về trang Home hoặc Login (ở đây demo quay về Home)
-                        navController.popBackStack(NavigationItem.Home.route, false)
+                        // Hiển thị dialog xác nhận
+                        showLogoutDialog = true
                     }
                 }
                 item { Spacer(modifier = Modifier.height(50.dp)) }

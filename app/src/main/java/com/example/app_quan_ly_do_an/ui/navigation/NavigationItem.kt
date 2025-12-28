@@ -120,6 +120,16 @@ sealed class NavigationItem(
     ) {
         fun createRoute(batchId: String) = "edit_batch/$batchId"
     }
+
+    object Login : NavigationItem(
+        route = "login",
+        title = "Đăng nhập"
+    )
+
+    object Register : NavigationItem(
+        route = "register",
+        title = "Đăng ký"
+    )
 }
 
 val navigationItems = listOf(

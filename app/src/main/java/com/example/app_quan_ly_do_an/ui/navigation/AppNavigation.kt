@@ -1,7 +1,10 @@
 package com.example.app_quan_ly_do_an.ui.navigation
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -13,14 +16,9 @@ import com.example.app_quan_ly_do_an.ui.screens.stock.StockScreen
 import com.example.app_quan_ly_do_an.ui.screens.notification.NotificationScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.BatchDetailScreen
 import com.example.app_quan_ly_do_an.ui.screens.profile.ProfileScreen
-//HIEN'S CODE BEGIN
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.AddImportBillScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.ImportBillDetailScreen
 import com.example.app_quan_ly_do_an.ui.viewmodel.home.HomeViewModel
-// Thêm 2 import này để dùng được Modifier.padding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.Modifier
-//HIEN'S CODE END
 import com.example.app_quan_ly_do_an.ui.screens.stock.import_bill.EditImportBillScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.ProductDetailScreen
 import com.example.app_quan_ly_do_an.ui.screens.stock.export_bill.ExportBillDetailScreen
@@ -31,6 +29,8 @@ import com.example.app_quan_ly_do_an.ui.screens.product.BatchListScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.AddProductScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.EditProductScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.EditBatchScreen
+import com.example.app_quan_ly_do_an.ui.screens.auth.LoginScreen
+import com.example.app_quan_ly_do_an.ui.screens.auth.RegisterScreen
 
 /**
  * Defines the navigation graph for the application.
@@ -50,21 +50,28 @@ fun AppNavigation(
 ) {
     NavHost(
         navController = navController,
-        startDestination = NavigationItem.Home.route,
-        // HIEN'S CODE BEGIN
-        // QUAN TRỌNG: Thêm dòng này để đẩy nội dung lên trên BottomBar
-        modifier = Modifier.padding(innerPadding)
-        // HIEN'S CODE END
+        startDestination = NavigationItem.Login.route
     ) {
+        // Login & Register screens - KHÔNG có padding vì không có BottomBar
+        composable(NavigationItem.Login.route) {
+            LoginScreen(navController = navController)
+        }
+
+        composable(NavigationItem.Register.route) {
+            RegisterScreen(navController = navController)
+        }
+
+        // Các màn hình khác - CÓ padding vì có BottomBar
         composable(NavigationItem.Home.route) {
-            // HIEN'S CODE BEGIN
-            // Truyền ViewModel vào HomeScreen
-            HomeScreen(navController = navController, viewModel = homeViewModel)
-            // HIEN'S CODE END
+            Box(modifier = Modifier.padding(innerPadding)) {
+                HomeScreen(navController = navController, viewModel = homeViewModel)
+            }
         }
 
         composable(NavigationItem.Product.route) {
-            ProductScreen(navController = navController)
+            Box(modifier = Modifier.padding(innerPadding)) {
+                ProductScreen(navController = navController)
+            }
         }
 
         //Lưu biến để quay về đúng tab trước
@@ -80,11 +87,15 @@ fun AppNavigation(
         }
 
         composable(NavigationItem.Notification.route) {
-            NotificationScreen()
+            Box(modifier = Modifier.padding(innerPadding)) {
+                NotificationScreen()
+            }
         }
 
         composable(NavigationItem.Profile.route) {
-            ProfileScreen(navController = navController)
+            Box(modifier = Modifier.padding(innerPadding)) {
+                ProfileScreen(navController = navController)
+            }
         }
 
         //HIEN'S CODE BEGIN
