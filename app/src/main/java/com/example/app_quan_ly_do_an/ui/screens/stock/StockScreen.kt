@@ -4,13 +4,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Surface // Thêm import Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -20,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
+import com.example.app_quan_ly_do_an.ui.navigation.NavigationItem
 import com.example.app_quan_ly_do_an.ui.screens.stock.tabs.ExportStockTab
 import com.example.app_quan_ly_do_an.ui.screens.stock.tabs.ImportStockTab
 
@@ -30,24 +29,34 @@ fun StockScreen(navController: NavController, innerPadding: PaddingValues, initi
     val tabs = listOf("Nhập kho", "Xuất kho")
     val activeColor = Color(0xFF006633)
 
-    // Thay thế Scaffold bằng Surface để tránh lỗi unused scaffoldPadding
-    // Surface vẫn cho phép thiết lập màu nền (color thay cho containerColor)
-    Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(
-                top = innerPadding.calculateTopPadding(),
-                bottom = innerPadding.calculateBottomPadding()
-            ),
-        color = Color(0xFFF5F5F5)
-    ) {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color(0xFFF5F5F5),
+        // Quản lý FAB tập trung ở đây để tránh lỗi padding lồng nhau
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    if (selectedTabIndex == 0)
+                        navController.navigate(NavigationItem.AddImportBill.route)
+                    else
+                        navController.navigate(NavigationItem.AddExportBill.route)
+                },
+                containerColor = activeColor,
+                shape = CircleShape
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+            }
+        }
+    ) { scaffoldPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                // Sử dụng innerPadding.calculateBottomPadding() để tránh bị BottomBar che
-                .padding(bottom = innerPadding.calculateBottomPadding())
+                .padding(
+                    top = innerPadding.calculateTopPadding(), // Chống đè Status Bar
+                    bottom = innerPadding.calculateBottomPadding() // Chống đè BottomBar
+                )
         ) {
-            // 1. TabRow sát mép trên
+            // 1. TabRow
             TabRow(
                 selectedTabIndex = selectedTabIndex,
                 containerColor = Color.White,
@@ -75,7 +84,7 @@ fun StockScreen(navController: NavController, innerPadding: PaddingValues, initi
                 }
             }
 
-            // 2. Nội dung thay đổi bên dưới TabRow
+            // 2. Nội dung Tab
             when (selectedTabIndex) {
                 0 -> ImportStockTab(navController)
                 1 -> ExportStockTab(navController)

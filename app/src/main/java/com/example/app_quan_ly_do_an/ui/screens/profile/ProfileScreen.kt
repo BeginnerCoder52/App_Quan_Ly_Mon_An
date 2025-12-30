@@ -161,7 +161,7 @@ fun ProfileScreen(navController: NavController) {
 
                 item {
                     ProfileOptionItem(icon = Icons.Default.Category, title = "Quản lý Nhóm hàng") {
-                        Toast.makeText(context, "Chức năng đang phát triển", Toast.LENGTH_SHORT).show()
+                        navController.navigate(NavigationItem.CategoryManagement.route)
                     }
                     ProfileOptionItem(icon = Icons.Default.LocalShipping, title = "Quản lý Nhà cung cấp") {
                         Toast.makeText(context, "Chức năng đang phát triển", Toast.LENGTH_SHORT).show()

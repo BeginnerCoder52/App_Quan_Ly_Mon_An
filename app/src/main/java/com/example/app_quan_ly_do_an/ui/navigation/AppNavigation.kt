@@ -31,6 +31,7 @@ import com.example.app_quan_ly_do_an.ui.screens.product.EditProductScreen
 import com.example.app_quan_ly_do_an.ui.screens.product.EditBatchScreen
 import com.example.app_quan_ly_do_an.ui.screens.auth.LoginScreen
 import com.example.app_quan_ly_do_an.ui.screens.auth.RegisterScreen
+import com.example.app_quan_ly_do_an.ui.screens.product.CategoryManagementScreen
 
 /**
  * Defines the navigation graph for the application.
@@ -193,6 +194,13 @@ fun AppNavigation(
             EditExportBillScreen(
                 navController = navController,
                 billId = billId,
+                onBack = { navController.popBackStack() },
+                bottomPadding = innerPadding.calculateBottomPadding()
+            )
+        }
+
+        composable(NavigationItem.CategoryManagement.route) {
+            CategoryManagementScreen(
                 onBack = { navController.popBackStack() },
                 bottomPadding = innerPadding.calculateBottomPadding()
             )

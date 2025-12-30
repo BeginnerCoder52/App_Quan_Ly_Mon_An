@@ -121,6 +121,11 @@ sealed class NavigationItem(
         fun createRoute(batchId: String) = "edit_batch/$batchId"
     }
 
+    object CategoryManagement : NavigationItem(
+        route = "category_management",
+        title = "Quản lý nhóm hàng"
+    )
+
     object Login : NavigationItem(
         route = "login",
         title = "Đăng nhập"
